@@ -32,15 +32,6 @@ export const categoryLabels: Record<IndicatorCategory, string> = {
   infraestrutura: "Infraestrutura",
 }
 
-export const categoryIcons: Record<IndicatorCategory, string> = {
-  demografia: "👥",
-  economia: "💰",
-  habitacao: "🏠",
-  social: "🤝",
-  saude: "🏥",
-  educacao: "📚",
-  infraestrutura: "🛣️",
-}
 
 export const indicators: IndicatorDef[] = [
   { key: "POPULACAO", label: "População", category: "demografia", format: "number" },

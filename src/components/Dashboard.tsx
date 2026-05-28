@@ -3,7 +3,6 @@ import {
   formatValue,
   type IndicatorCategory,
   categoryLabels,
-  categoryIcons,
   getIndicatorsByCategory,
   indicators,
   bairros,
@@ -12,27 +11,54 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useMemo } from "react"
 import { BarChart, HorizontalBar, ScatterChart, PieChart } from "@/components/Charts"
+import {
+  Users,
+  Banknote,
+  Home,
+  HeartHandshake,
+  Activity,
+  BookOpen,
+  Construction,
+  LayoutDashboard,
+  SearchCode,
+  Scale,
+  ClipboardList,
+  TrendingDown,
+  Route,
+  AlertTriangle,
+  type LucideIcon,
+} from "lucide-react"
 
 type ActiveSection = "overview" | "compare" | "multi" | IndicatorCategory
+
+const CATEGORY_ICONS: Record<IndicatorCategory, LucideIcon> = {
+  demografia: Users,
+  economia: Banknote,
+  habitacao: Home,
+  social: HeartHandshake,
+  saude: Activity,
+  educacao: BookOpen,
+  infraestrutura: Construction,
+}
 
 function KPICard({
   label,
   value,
   format,
-  icon,
+  Icon,
   note,
 }: {
   label: string
   value: number
   format: IndicatorDef["format"]
-  icon?: string
+  Icon?: LucideIcon
   note?: string
 }) {
   return (
     <div className="bg-white border border-slate-200 rounded p-3">
       <div className="flex items-start justify-between gap-1">
         <p className="text-xs text-slate-500 leading-tight">{label}</p>
-        {icon && <span className="text-base leading-none shrink-0">{icon}</span>}
+        {Icon && <Icon size={16} className="text-slate-400 shrink-0 mt-0.5" />}
       </div>
       <p className="text-lg font-bold text-slate-800 mt-1 tabular-nums">{formatValue(value, format)}</p>
       {note && <p className="text-[10px] text-slate-400 mt-0.5">{note}</p>}
@@ -92,18 +118,30 @@ function RankingTable({ indicator, limit = 74 }: { indicator: IndicatorDef; limi
   )
 }
 
-function SectionHeader({ title }: { title: string }) {
+function SectionHeader({ title, Icon }: { title: string; Icon?: LucideIcon }) {
   return (
-    <div className="border-b border-slate-200 pb-2 mb-4">
+    <div className="flex items-center gap-2 border-b border-slate-200 pb-2 mb-4">
+      {Icon && <Icon size={14} className="text-slate-500 shrink-0" />}
       <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{title}</h2>
     </div>
   )
 }
 
-function PanelBox({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
+function PanelBox({
+  title,
+  Icon,
+  children,
+  className = "",
+}: {
+  title: string
+  Icon?: LucideIcon
+  children: React.ReactNode
+  className?: string
+}) {
   return (
     <div className={`bg-white border border-slate-200 rounded overflow-hidden ${className}`}>
-      <div className="bg-slate-50 border-b border-slate-200 px-4 py-2">
+      <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex items-center gap-2">
+        {Icon && <Icon size={13} className="text-slate-500 shrink-0" />}
         <p className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">{title}</p>
       </div>
       {children}
@@ -125,25 +163,25 @@ function OverviewPanel() {
 
   return (
     <div className="space-y-5">
-      <SectionHeader title="Indicadores consolidados — 74 bairros" />
+      <SectionHeader title="Indicadores consolidados — 74 bairros" Icon={LayoutDashboard} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-        <KPICard label="População Total" value={totalPop} format="number" icon="👥" note="74 bairros" />
-        <KPICard label="Renda Média" value={avgIncome} format="currency" icon="💰" note="estimada 2025" />
-        <KPICard label="Desocupação Média" value={avgUnemployment} format="percent" icon="📊" note="2022" />
-        <KPICard label="Vias Pavimentadas" value={avgPaved} format="percent" icon="🛣️" note="média" />
-        <KPICard label="CadÚnico" value={totalCadUnico} format="number" icon="📋" note="2022" />
-        <KPICard label="Bolsa Família" value={totalBolsaFamilia} format="number" icon="🤝" note="2022" />
-        <KPICard label="Viol. contra Mulheres" value={totalViolencia} format="number" icon="⚠️" note="2022" />
+        <KPICard label="População Total" value={totalPop} format="number" Icon={Users} note="74 bairros" />
+        <KPICard label="Renda Média" value={avgIncome} format="currency" Icon={Banknote} note="estimada 2025" />
+        <KPICard label="Desocupação Média" value={avgUnemployment} format="percent" Icon={TrendingDown} note="2022" />
+        <KPICard label="Vias Pavimentadas" value={avgPaved} format="percent" Icon={Route} note="média" />
+        <KPICard label="CadÚnico" value={totalCadUnico} format="number" Icon={ClipboardList} note="2022" />
+        <KPICard label="Bolsa Família" value={totalBolsaFamilia} format="number" Icon={HeartHandshake} note="2022" />
+        <KPICard label="Viol. contra Mulheres" value={totalViolencia} format="number" Icon={AlertTriangle} note="2022" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <PanelBox title="População por bairro (Top 15)">
+        <PanelBox title="População por bairro (Top 15)" Icon={Users}>
           <div className="h-72 p-2">
             <BarChart data={bairros} indicatorKey="POPULACAO" indicator={popInd} limit={15} />
           </div>
         </PanelBox>
-        <PanelBox title="Renda familiar estimada (Top 15)">
+        <PanelBox title="Renda familiar estimada (Top 15)" Icon={Banknote}>
           <div className="h-72 p-2">
             <BarChart data={bairros} indicatorKey="RENDA_ESTIMADA_2025" indicator={rendaInd} limit={15} />
           </div>
@@ -151,7 +189,7 @@ function OverviewPanel() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <PanelBox title="Desocupação vs Renda (por bairro)">
+        <PanelBox title="Desocupação vs Renda" Icon={Scale}>
           <div className="h-72 p-2">
             <ScatterChart
               data={bairros}
@@ -163,7 +201,7 @@ function OverviewPanel() {
             />
           </div>
         </PanelBox>
-        <PanelBox title="Distribuição populacional">
+        <PanelBox title="Distribuição populacional" Icon={Users}>
           <div className="h-72 p-2">
             <PieChart data={bairros} indicatorKey="POPULACAO" limit={10} />
           </div>
@@ -186,11 +224,9 @@ function ComparisonPanel() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4 flex-wrap">
-        <SectionHeader title="Perfil de bairro" />
+        <SectionHeader title="Perfil de bairro" Icon={SearchCode} />
         <Select value={selectedBairro} onValueChange={(v) => { if (v) setSelectedBairro(v) }}>
-          <SelectTrigger className="w-[220px] h-8 text-sm">
-            <SelectValue />
-          </SelectTrigger>
+          <SelectTrigger className="w-[220px] h-8 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
             {bairros.map((b) => (
               <SelectItem key={b.nome} value={b.nome}>{b.nome}</SelectItem>
@@ -200,19 +236,19 @@ function ComparisonPanel() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <KPICard label="População" value={getVal(bairro, "POPULACAO")} format="number" icon="👥" />
-        <KPICard label="Renda Estimada" value={getVal(bairro, "RENDA_ESTIMADA_2025")} format="currency" icon="💰" note="2025" />
-        <KPICard label="Desocupação" value={getVal(bairro, "DESOCUPADO_PCT")} format="percent" icon="📊" />
-        <KPICard label="Vias Pavimentadas" value={getVal(bairro, "PAVIMENTADA_PCT")} format="percent" icon="🛣️" />
+        <KPICard label="População" value={getVal(bairro, "POPULACAO")} format="number" Icon={Users} />
+        <KPICard label="Renda Estimada" value={getVal(bairro, "RENDA_ESTIMADA_2025")} format="currency" Icon={Banknote} note="2025" />
+        <KPICard label="Desocupação" value={getVal(bairro, "DESOCUPADO_PCT")} format="percent" Icon={TrendingDown} />
+        <KPICard label="Vias Pavimentadas" value={getVal(bairro, "PAVIMENTADA_PCT")} format="percent" Icon={Route} />
       </div>
 
       {categories.map((cat) => {
-        const catIndicators = getIndicatorsByCategory(cat)
+        const CatIcon = CATEGORY_ICONS[cat]
         return (
-          <PanelBox key={cat} title={`${categoryIcons[cat]}  ${categoryLabels[cat]}`}>
+          <PanelBox key={cat} title={categoryLabels[cat]} Icon={CatIcon}>
             <table className="w-full text-xs">
               <tbody>
-                {catIndicators.map((ind, i) => (
+                {getIndicatorsByCategory(cat).map((ind, i) => (
                   <tr key={ind.key} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
                     <td className="py-1.5 px-4 text-slate-500">{ind.label}</td>
                     <td className="py-1.5 px-4 text-right font-semibold text-slate-800 tabular-nums">
@@ -242,7 +278,7 @@ function MultiComparePanel() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
-        <SectionHeader title="Comparação entre bairros" />
+        <SectionHeader title="Comparação entre bairros" Icon={Scale} />
         <Select value={b1} onValueChange={(v) => { if (v) setB1(v) }}>
           <SelectTrigger className="w-[200px] h-8 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>{bairros.map((b) => <SelectItem key={b.nome} value={b.nome}>{b.nome}</SelectItem>)}</SelectContent>
@@ -254,7 +290,7 @@ function MultiComparePanel() {
         </Select>
       </div>
 
-      <PanelBox title={`${bairro1.nome} × ${bairro2.nome}`}>
+      <PanelBox title={`${bairro1.nome}  ×  ${bairro2.nome}`} Icon={Scale}>
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-slate-100 text-slate-600 text-left">
@@ -297,13 +333,14 @@ function CategoryPanel({ category }: { category: IndicatorCategory }) {
   const [selectedKey, setSelectedKey] = useState(catIndicators[0]?.key ?? "POPULACAO")
   const activeIndicator = catIndicators.find((i) => i.key === selectedKey) ?? catIndicators[0]
   const [chartType, setChartType] = useState<"bar" | "horizontal">("bar")
+  const CatIcon = CATEGORY_ICONS[category]
 
   if (!activeIndicator) return null
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
-        <SectionHeader title={`${categoryIcons[category]}  ${categoryLabels[category]}`} />
+        <SectionHeader title={categoryLabels[category]} Icon={CatIcon} />
         <Select value={selectedKey} onValueChange={(v) => { if (v) setSelectedKey(v) }}>
           <SelectTrigger className="w-[300px] h-8 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -328,7 +365,7 @@ function CategoryPanel({ category }: { category: IndicatorCategory }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <PanelBox title={activeIndicator.label}>
+        <PanelBox title={activeIndicator.label} Icon={CatIcon}>
           <div className="h-80 p-2">
             {chartType === "bar" ? (
               <BarChart data={bairros} indicatorKey={activeIndicator.key} indicator={activeIndicator} />
@@ -338,7 +375,7 @@ function CategoryPanel({ category }: { category: IndicatorCategory }) {
           </div>
         </PanelBox>
 
-        <PanelBox title="Ranking completo — todos os bairros">
+        <PanelBox title="Ranking completo — todos os bairros" Icon={ClipboardList}>
           <div className="overflow-y-auto max-h-80">
             <RankingTable indicator={activeIndicator} />
           </div>
@@ -350,25 +387,25 @@ function CategoryPanel({ category }: { category: IndicatorCategory }) {
 
 function NavItem({
   label,
-  icon,
+  Icon,
   active,
   onClick,
 }: {
   label: string
-  icon?: string
+  Icon: LucideIcon
   active: boolean
   onClick: () => void
 }) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2 px-3 py-1.5 text-left text-sm rounded transition-colors ${
+      className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-sm rounded transition-colors ${
         active
           ? "bg-blue-600 text-white font-medium"
           : "text-slate-300 hover:bg-slate-700 hover:text-white"
       }`}
     >
-      {icon && <span className="text-sm leading-none shrink-0">{icon}</span>}
+      <Icon size={14} className="shrink-0" />
       <span className="leading-tight truncate">{label}</span>
     </button>
   )
@@ -379,14 +416,13 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#f0f2f5" }}>
-      {/* Top header */}
       <header
         className="flex items-center justify-between px-4 py-2 shrink-0 border-b"
         style={{ background: "#1a2d3d", borderColor: "#0f1e2a" }}
       >
         <div className="flex items-center gap-3">
           <div
-            className="w-7 h-7 rounded flex items-center justify-center text-xs font-bold text-white shrink-0"
+            className="w-7 h-7 rounded flex items-center justify-center text-[11px] font-bold text-white shrink-0"
             style={{ background: "#2563eb" }}
           >
             CG
@@ -405,15 +441,14 @@ export default function Dashboard() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <aside
           className="w-52 shrink-0 flex flex-col overflow-y-auto"
           style={{ background: "#1a2d3d" }}
         >
           <nav className="p-2 pt-3 space-y-0.5">
-            <NavItem label="Visão Geral" icon="📊" active={active === "overview"} onClick={() => setActive("overview")} />
-            <NavItem label="Perfil de Bairro" icon="🔍" active={active === "compare"} onClick={() => setActive("compare")} />
-            <NavItem label="Comparar" icon="⚖️" active={active === "multi"} onClick={() => setActive("multi")} />
+            <NavItem label="Visão Geral" Icon={LayoutDashboard} active={active === "overview"} onClick={() => setActive("overview")} />
+            <NavItem label="Perfil de Bairro" Icon={SearchCode} active={active === "compare"} onClick={() => setActive("compare")} />
+            <NavItem label="Comparar" Icon={Scale} active={active === "multi"} onClick={() => setActive("multi")} />
           </nav>
 
           <div className="mx-3 my-2 border-t" style={{ borderColor: "#2d4a5f" }} />
@@ -425,11 +460,11 @@ export default function Dashboard() {
           </div>
 
           <nav className="px-2 pb-2 space-y-0.5">
-            {(Object.keys(categoryLabels) as IndicatorCategory[]).map((cat) => (
+            {(Object.keys(CATEGORY_ICONS) as IndicatorCategory[]).map((cat) => (
               <NavItem
                 key={cat}
                 label={categoryLabels[cat]}
-                icon={categoryIcons[cat]}
+                Icon={CATEGORY_ICONS[cat]}
                 active={active === cat}
                 onClick={() => setActive(cat)}
               />
@@ -441,13 +476,12 @@ export default function Dashboard() {
           </div>
         </aside>
 
-        {/* Main content */}
         <main className="flex-1 overflow-y-auto p-5">
           {active === "overview" && <OverviewPanel />}
           {active === "compare" && <ComparisonPanel />}
           {active === "multi" && <MultiComparePanel />}
-          {(Object.keys(categoryLabels) as IndicatorCategory[]).map((cat) =>
-            active === cat ? <CategoryPanel key={cat} category={cat as IndicatorCategory} /> : null
+          {(Object.keys(CATEGORY_ICONS) as IndicatorCategory[]).map((cat) =>
+            active === cat ? <CategoryPanel key={cat} category={cat} /> : null
           )}
         </main>
       </div>
