@@ -26,7 +26,7 @@ import {
   TrendingDown,
   Route,
   AlertTriangle,
-  Menu,
+  MoreHorizontal,
   X,
   type LucideIcon,
 } from "lucide-react"
@@ -455,39 +455,55 @@ function NavItem({
   )
 }
 
+function BottomNavItem({
+  label,
+  Icon,
+  active,
+  onClick,
+}: {
+  label: string
+  Icon: LucideIcon
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors ${
+        active ? "text-blue-400" : "text-slate-400 hover:text-slate-200"
+      }`}
+    >
+      <Icon size={20} />
+      <span className="text-[10px] leading-none">{label}</span>
+    </button>
+  )
+}
+
 export default function Dashboard() {
   const [active, setActive] = useState<ActiveSection>("overview")
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(false)
+
+  const categories = Object.keys(CATEGORY_ICONS) as IndicatorCategory[]
+  const isCategoryActive = categories.includes(active as IndicatorCategory)
 
   useEffect(() => {
-    if (mobileSidebarOpen) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = ""
-    }
+    document.body.style.overflow = sheetOpen ? "hidden" : ""
     return () => { document.body.style.overflow = "" }
-  }, [mobileSidebarOpen])
+  }, [sheetOpen])
 
-  const closeMobileSidebar = () => setMobileSidebarOpen(false)
   const navigate = (section: ActiveSection) => {
     setActive(section)
-    setMobileSidebarOpen(false)
+    setSheetOpen(false)
   }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#f0f2f5" }}>
+      {/* Header */}
       <header
         className="flex items-center justify-between px-3 md:px-4 py-2 shrink-0 border-b"
         style={{ background: "#1a2d3d", borderColor: "#0f1e2a" }}
       >
         <div className="flex items-center gap-2 md:gap-3">
-          <button
-            onClick={() => setMobileSidebarOpen(true)}
-            className="md:hidden text-white hover:text-blue-300 transition-colors p-1 -ml-1"
-            aria-label="Abrir menu"
-          >
-            <Menu size={20} />
-          </button>
           <div
             className="w-6 h-6 md:w-7 md:h-7 rounded flex items-center justify-center text-[10px] md:text-[11px] font-bold text-white shrink-0"
             style={{ background: "#2563eb" }}
@@ -507,32 +523,9 @@ export default function Dashboard() {
         </span>
       </header>
 
-      {/* Mobile sidebar overlay */}
-      {mobileSidebarOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
-            onClick={closeMobileSidebar}
-          />
-          <aside
-            className="fixed top-0 left-0 bottom-0 w-52 z-50 md:hidden flex flex-col overflow-y-auto"
-            style={{ background: "#1a2d3d" }}
-          >
-            <div className="flex justify-end p-2">
-              <button
-                onClick={closeMobileSidebar}
-                className="text-slate-300 hover:text-white transition-colors"
-                aria-label="Fechar menu"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <SidebarContent active={active} onNavigate={navigate} />
-          </aside>
-        </>
-      )}
-
+      {/* Body */}
       <div className="flex flex-1 overflow-hidden">
+        {/* Desktop sidebar */}
         <aside
           className="hidden md:flex w-52 shrink-0 flex-col overflow-y-auto"
           style={{ background: "#1a2d3d" }}
@@ -540,15 +533,66 @@ export default function Dashboard() {
           <SidebarContent active={active} onNavigate={setActive} />
         </aside>
 
-        <main className="flex-1 overflow-y-auto p-3 md:p-5">
+        {/* Main content — extra bottom padding on mobile so content isn't hidden by bottom nav */}
+        <main className="flex-1 overflow-y-auto p-3 md:p-5 pb-20 md:pb-5">
           {active === "overview" && <OverviewPanel />}
           {active === "compare" && <ComparisonPanel />}
           {active === "multi" && <MultiComparePanel />}
-          {(Object.keys(CATEGORY_ICONS) as IndicatorCategory[]).map((cat) =>
+          {categories.map((cat) =>
             active === cat ? <CategoryPanel key={cat} category={cat} /> : null
           )}
         </main>
       </div>
+
+      {/* Mobile bottom nav */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 md:hidden z-30 flex border-t"
+        style={{ background: "#1a2d3d", borderColor: "#0f1e2a" }}
+      >
+        <BottomNavItem label="Visão Geral" Icon={LayoutDashboard} active={active === "overview"} onClick={() => navigate("overview")} />
+        <BottomNavItem label="Perfil" Icon={SearchCode} active={active === "compare"} onClick={() => navigate("compare")} />
+        <BottomNavItem label="Comparar" Icon={Scale} active={active === "multi"} onClick={() => navigate("multi")} />
+        <BottomNavItem label="Categorias" Icon={MoreHorizontal} active={isCategoryActive} onClick={() => setSheetOpen(true)} />
+      </nav>
+
+      {/* Mobile bottom sheet for categories */}
+      {sheetOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setSheetOpen(false)}
+          />
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 md:hidden rounded-t-2xl overflow-hidden"
+            style={{ background: "#1a2d3d" }}
+          >
+            <div
+              className="flex items-center justify-between px-4 py-3 border-b"
+              style={{ borderColor: "#2d4a5f" }}
+            >
+              <p className="text-sm font-semibold text-white">Por Categoria</p>
+              <button
+                onClick={() => setSheetOpen(false)}
+                className="text-slate-400 hover:text-white transition-colors"
+                aria-label="Fechar"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <nav className="p-2 pb-6 space-y-0.5">
+              {categories.map((cat) => (
+                <NavItem
+                  key={cat}
+                  label={categoryLabels[cat]}
+                  Icon={CATEGORY_ICONS[cat]}
+                  active={active === cat}
+                  onClick={() => navigate(cat)}
+                />
+              ))}
+            </nav>
+          </div>
+        </>
+      )}
     </div>
   )
 }
