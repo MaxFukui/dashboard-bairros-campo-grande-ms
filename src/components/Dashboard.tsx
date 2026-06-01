@@ -33,6 +33,8 @@ import {
 
 type ActiveSection = "overview" | "compare" | "multi" | IndicatorCategory
 
+const TAB_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6"]
+
 const CATEGORY_ICONS: Record<IndicatorCategory, LucideIcon> = {
   demografia: Users,
   economia: Banknote,
@@ -459,22 +461,33 @@ function BottomNavItem({
   label,
   Icon,
   active,
+  color,
   onClick,
+  badge,
 }: {
   label: string
   Icon: LucideIcon
   active: boolean
+  color: string
   onClick: () => void
+  badge?: boolean
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors ${
-        active ? "text-blue-400" : "text-slate-400 hover:text-slate-200"
-      }`}
+      className="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors"
+      style={{ color: active ? color : "#64748b" }}
     >
-      <Icon size={20} />
-      <span className="text-[10px] leading-none">{label}</span>
+      <span className="relative">
+        <Icon size={20} />
+        {badge && (
+          <span
+            className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full animate-pulse"
+            style={{ background: "#ef4444" }}
+          />
+        )}
+      </span>
+      <span className="text-[10px] leading-none font-medium">{label}</span>
     </button>
   )
 }
@@ -482,9 +495,15 @@ function BottomNavItem({
 export default function Dashboard() {
   const [active, setActive] = useState<ActiveSection>("overview")
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [categoryUnexplored, setCategoryUnexplored] = useState(() => !localStorage.getItem("cats_explored"))
 
   const categories = Object.keys(CATEGORY_ICONS) as IndicatorCategory[]
   const isCategoryActive = categories.includes(active as IndicatorCategory)
+
+  const activeTabIndex =
+    active === "overview" ? 0 :
+    active === "compare" ? 1 :
+    active === "multi" ? 2 : 3
 
   useEffect(() => {
     document.body.style.overflow = sheetOpen ? "hidden" : ""
@@ -494,6 +513,14 @@ export default function Dashboard() {
   const navigate = (section: ActiveSection) => {
     setActive(section)
     setSheetOpen(false)
+  }
+
+  const openCategories = () => {
+    setSheetOpen(true)
+    if (categoryUnexplored) {
+      localStorage.setItem("cats_explored", "1")
+      setCategoryUnexplored(false)
+    }
   }
 
   return (
@@ -512,8 +539,7 @@ export default function Dashboard() {
           </div>
           <div className="leading-tight">
             <span className="text-xs md:text-sm font-semibold text-white">Campo Grande — Painel de Bairros</span>
-            <span className="hidden sm:inline ml-3 text-[10px] md:text-xs" style={{ color: "#94a3b8" }}>DAFO Carandá</span>
-          </div>
+            </div>
         </div>
         <span
           className="text-[10px] md:text-xs px-2 py-0.5 rounded tabular-nums"
@@ -547,12 +573,23 @@ export default function Dashboard() {
       {/* Mobile bottom nav */}
       <nav
         className="fixed bottom-0 left-0 right-0 md:hidden z-30 flex border-t"
-        style={{ background: "#1a2d3d", borderColor: "#0f1e2a" }}
+        style={{ background: "#1a2d3d", borderColor: "#0f1e2a", position: "fixed" }}
       >
-        <BottomNavItem label="Visão Geral" Icon={LayoutDashboard} active={active === "overview"} onClick={() => navigate("overview")} />
-        <BottomNavItem label="Perfil" Icon={SearchCode} active={active === "compare"} onClick={() => navigate("compare")} />
-        <BottomNavItem label="Comparar" Icon={Scale} active={active === "multi"} onClick={() => navigate("multi")} />
-        <BottomNavItem label="Categorias" Icon={MoreHorizontal} active={isCategoryActive} onClick={() => setSheetOpen(true)} />
+        {/* Sliding color indicator bar */}
+        <div
+          aria-hidden
+          className="absolute top-0 left-0 h-[3px] rounded-b"
+          style={{
+            width: "25%",
+            background: TAB_COLORS[activeTabIndex],
+            transform: `translateX(${activeTabIndex * 100}%)`,
+            transition: "transform 220ms cubic-bezier(.4,0,.2,1), background 220ms ease",
+          }}
+        />
+        <BottomNavItem label="Visão Geral" Icon={LayoutDashboard} active={active === "overview"} color={TAB_COLORS[0]} onClick={() => navigate("overview")} />
+        <BottomNavItem label="Perfil" Icon={SearchCode} active={active === "compare"} color={TAB_COLORS[1]} onClick={() => navigate("compare")} />
+        <BottomNavItem label="Comparar" Icon={Scale} active={active === "multi"} color={TAB_COLORS[2]} onClick={() => navigate("multi")} />
+        <BottomNavItem label="Categorias" Icon={MoreHorizontal} active={isCategoryActive} color={TAB_COLORS[3]} onClick={openCategories} badge={categoryUnexplored} />
       </nav>
 
       {/* Mobile bottom sheet for categories */}
