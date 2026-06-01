@@ -478,7 +478,7 @@ function BottomNavItem({
       className="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors"
       style={{ color: active ? color : "#64748b" }}
     >
-      <span className="relative">
+      <span className={`relative inline-flex${active ? " animate-breathe" : ""}`}>
         <Icon size={20} />
         {badge && (
           <span
