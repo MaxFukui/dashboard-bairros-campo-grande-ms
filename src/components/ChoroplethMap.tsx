@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { type IndicatorDef, formatValue, bairros, getVal } from "@/lib/data"
 import { loadBairrosGeoJSON, type BairroFeatureCollection } from "@/lib/geo"
 import { shortRegiao, regiaoColor } from "@/lib/charts-helpers"
+import { cn } from "@/lib/utils"
 
 const MAP_CONTAINER_CLASS = "cg-bairro-map"
 
@@ -61,8 +62,6 @@ export function ChoroplethMap({
   const geoJsonLayerRef = useRef<L.GeoJSON | null>(null)
   const labelLayerRef = useRef<L.LayerGroup | null>(null)
   const readyRef = useRef(false)
-  const lastSelectedRef = useRef<string | null>(null)
-  const lastIndicatorKeyRef = useRef<string>("")
   const onBairroClickRef = useRef(onBairroClick)
   const selectedRef = useRef(selectedBairro)
   const selectableRef = useRef(selectable)
@@ -103,7 +102,13 @@ export function ChoroplethMap({
       onZoomChangeRef.current(map.getZoom())
     })
 
+    // Bento grid / mobile rotation can resize the card after Leaflet
+    // measured it — keep the map in sync or tiles render misaligned.
+    const ro = new ResizeObserver(() => map.invalidateSize())
+    ro.observe(containerRef.current)
+
     return () => {
+      ro.disconnect()
       map.remove()
       mapRef.current = null
       geoJsonLayerRef.current = null
@@ -274,12 +279,14 @@ export function ChoroplethMap({
     geoJsonLayerRef.current = layer
 
     rebuildLabels(geo, map.getZoom())
-
-    lastIndicatorKeyRef.current = indicator.key
-    lastSelectedRef.current = selected
   }, [indicator.key, indicator.format, rebuildLabels])
 
 
+  const fittedRef = useRef(false)
+
+  // One effect covers first load, indicator switches (buildLayer identity
+  // changes) and selection changes. fitBounds only runs once so changing
+  // the indicator doesn't yank the user's zoom back out.
   useEffect(() => {
     if (!mapRef.current) return
     let cancelled = false
@@ -289,7 +296,10 @@ export function ChoroplethMap({
         if (cancelled || !mapRef.current) return
         readyRef.current = true
         buildLayer(geo)
-        fitToData(geo)
+        if (!fittedRef.current) {
+          fitToData(geo)
+          fittedRef.current = true
+        }
       })
       .catch((e) => {
         console.error("Failed to load CG GeoJSON for Leaflet map:", e)
@@ -298,19 +308,7 @@ export function ChoroplethMap({
     return () => {
       cancelled = true
     }
-  }, [buildLayer, fitToData])
-
-  useEffect(() => {
-    if (!readyRef.current || !mapRef.current) return
-    loadBairrosGeoJSON().then((geo) => buildLayer(geo))
-  }, [indicator.key, buildLayer])
-
-  useEffect(() => {
-    if (!readyRef.current || !mapRef.current) return
-    if (lastSelectedRef.current === selectedBairro) return
-    lastSelectedRef.current = selectedBairro
-    loadBairrosGeoJSON().then((geo) => buildLayer(geo))
-  }, [selectedBairro, buildLayer])
+  }, [buildLayer, fitToData, selectedBairro])
 
 
   const legendScale = useMemo(() => {
@@ -320,7 +318,7 @@ export function ChoroplethMap({
   }, [indicator.key])
 
   return (
-    <Card className={className}>
+    <Card className={cn("overflow-hidden", className)}>
       <CardHeader className="pb-2">
         <CardTitle>{indicator.label} por bairro</CardTitle>
         <div className="flex flex-wrap gap-1.5 mt-2">
@@ -341,13 +339,14 @@ export function ChoroplethMap({
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div
-          ref={containerRef}
-          className={`${MAP_CONTAINER_CLASS} cg-map-root`}
-          style={{ height, width: "100%" }}
-        >
-          <div className="cg-map-tint" aria-hidden />
+        <div className="cg-map-root" style={{ height, width: "100%" }}>
+          <div
+            ref={containerRef}
+            className={MAP_CONTAINER_CLASS}
+            style={{ height: "100%", width: "100%" }}
+          />
           <div className="cg-legend" aria-hidden>
+            <div className="cg-legend__title">{indicator.label}</div>
             <div className="cg-legend__bar" />
             <div className="cg-legend__labels">
               <span>{formatValue(legendScale.min, indicator.format)}</span>

@@ -137,30 +137,33 @@
 .glass {
   background: linear-gradient(
     155deg,
-    rgba(0, 53, 102, 0.34) 0%,
-    rgba(0, 29, 61, 0.42) 60%,
-    rgba(0, 8, 20, 0.55) 100%
+    rgba(96, 165, 250, 0.10) 0%,
+    rgba(0, 53, 102, 0.28) 30%,
+    rgba(0, 29, 61, 0.34) 62%,
+    rgba(0, 8, 20, 0.42) 100%
   );
-  backdrop-filter: blur(18px) saturate(125%);
-  -webkit-backdrop-filter: blur(18px) saturate(125%);
-  border: 1px solid rgba(255, 214, 10, 0.10);
+  backdrop-filter: blur(28px) saturate(170%) brightness(1.08);
+  -webkit-backdrop-filter: blur(28px) saturate(170%) brightness(1.08);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 8px 28px -16px rgba(0, 0, 0, 0.7);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+    inset 1px 0 0 rgba(255, 255, 255, 0.05),
+    0 12px 36px -18px rgba(0, 0, 0, 0.8);
 }
 
 .glass-light {
   background: linear-gradient(
     155deg,
-    rgba(255, 255, 255, 0.04) 0%,
-    rgba(255, 214, 10, 0.02) 100%
+    rgba(255, 255, 255, 0.07) 0%,
+    rgba(255, 214, 10, 0.03) 100%
   );
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 214, 10, 0.08);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
 }
 
-/* Subtle moving top sellar on big cards */
+/* Specular highlight sweeping the top of big cards — the "liquid" part. */
 .glass-sheen::before {
   content: "";
   position: absolute;
@@ -168,8 +171,9 @@
   pointer-events: none;
   border-radius: inherit;
   background:
-    linear-gradient(180deg, rgba(255, 214, 10, 0.10) 0%, transparent 22%);
-  opacity: 0.6;
+    radial-gradient(120% 60% at 18% -18%, rgba(255, 255, 255, 0.14) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(255, 214, 10, 0.10) 0%, transparent 24%);
+  opacity: 0.8;
 }
 
 /* Gradient text helper */
@@ -195,9 +199,14 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
+    /* Ambient light blobs — the glass cards' backdrop-blur needs colour
+     * variation behind them to read as glass instead of flat panels. */
     background:
-      radial-gradient(1200px 800px at 80% -10%, rgba(255, 214, 10, 0.07), transparent 60%),
-      radial-gradient(900px 700px at -10% 10%, rgba(0, 53, 102, 0.45), transparent 60%),
+      radial-gradient(1200px 800px at 80% -10%, rgba(255, 214, 10, 0.12), transparent 60%),
+      radial-gradient(900px 700px at -10% 10%, rgba(29, 78, 216, 0.35), transparent 60%),
+      radial-gradient(1000px 900px at 50% 55%, rgba(0, 53, 102, 0.55), transparent 65%),
+      radial-gradient(700px 600px at 100% 85%, rgba(8, 145, 178, 0.16), transparent 60%),
+      radial-gradient(600px 500px at 15% 95%, rgba(124, 58, 237, 0.12), transparent 60%),
       #000814;
     background-attachment: fixed;
     color: #f8fafc;
@@ -234,10 +243,14 @@
  * ----------------------------------------------------------------- */
 .cg-bairro-map {
   background: #000814;
+  height: 100%;
 }
 
+/* Navy-tinted satellite: desaturate, darken, then push hue toward the
+ * Oxford-blue brand tone. Replaces the old overlay div, which sat below
+ * Leaflet's pane z-indexes (400+) and was never visible. */
 .cg-bairro-map .leaflet-tile-pane {
-  filter: grayscale(1) brightness(0.42) contrast(1.08);
+  filter: grayscale(0.35) brightness(0.52) sepia(0.5) hue-rotate(175deg) saturate(2.6) contrast(1.06);
 }
 
 .cg-bairro-map .leaflet-container {
@@ -267,15 +280,9 @@
 
 .cg-map-root {
   position: relative;
-}
-
-.cg-map-tint {
-  position: absolute;
-  inset: 0;
-  z-index: 350;
-  background: #001d3d;
-  opacity: 0.2;
-  pointer-events: none;
+  /* Contain Leaflet's pane z-indexes (200–1000) so they never fight the
+   * page header / bottom nav, and so the legend can sit above them. */
+  isolation: isolate;
 }
 
 .cg-tip-wrap.leaflet-tooltip {
@@ -356,14 +363,30 @@
   position: absolute;
   left: 12px;
   bottom: 14px;
-  z-index: 5;
+  /* Above every Leaflet pane/control (max 1000) inside the isolated map root. */
+  z-index: 1100;
   padding: 8px 10px 6px;
   border-radius: 10px;
-  background: rgba(0, 8, 20, 0.78);
+  background: rgba(0, 8, 20, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 214, 10, 0.22);
+  box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.8);
   pointer-events: none;
   font-family: var(--font-sans);
-  min-width: 180px;
+  min-width: 170px;
+  max-width: min(240px, calc(100% - 24px));
+}
+.cg-legend__title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ffd60a;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .cg-legend__bar {
   height: 10px;
@@ -390,4 +413,59 @@
 .cg-bairro-map .leaflet-container:focus,
 .cg-bairro-map .leaflet-container:focus-visible {
   outline: none;
+}
+
+/* ----------------------------------------------------------------- *
+ * Mobile bottom nav — darker than the page glass for contrast, with a
+ * slowly sweeping gold light along the top border so it reads as a menu.
+ * ----------------------------------------------------------------- */
+.cg-bottomnav {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 29, 61, 0.90) 0%,
+    rgba(0, 8, 20, 0.96) 100%
+  );
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  box-shadow:
+    0 -12px 32px -12px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Animated border: a gold glint travelling along a faint gold hairline. */
+.cg-bottomnav::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 214, 10, 0.10) 20%,
+      rgba(255, 214, 10, 0.95) 50%,
+      rgba(255, 214, 10, 0.10) 80%,
+      transparent 100%
+    ),
+    linear-gradient(90deg, rgba(255, 214, 10, 0.28), rgba(255, 214, 10, 0.28));
+  background-size: 220% 100%, 100% 100%;
+  background-repeat: no-repeat;
+  animation: nav-glint 3.6s ease-in-out infinite;
+}
+
+@keyframes nav-glint {
+  0%   { background-position: -120% 0, 0 0; }
+  55%  { background-position: 220% 0, 0 0; }
+  100% { background-position: 220% 0, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cg-bottomnav::before {
+    animation: none;
+    background: linear-gradient(90deg, rgba(255, 214, 10, 0.35), rgba(255, 214, 10, 0.35));
+  }
 }

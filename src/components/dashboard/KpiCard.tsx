@@ -25,7 +25,7 @@ export function KpiCard({
   return (
     <article
       className={cn(
-        "relative overflow-hidden rounded-2xl glass p-3.5",
+        "relative overflow-hidden rounded-2xl glass p-3.5 min-w-0",
         "group transition-all duration-300 hover:-translate-y-0.5",
         "hover:border-[rgba(255,214,10,0.32)]",
         className,
@@ -45,7 +45,7 @@ export function KpiCard({
         )}
       </div>
       <p
-        className="mt-2 text-2xl font-bold tabular-nums leading-tight"
+        className="mt-2 text-xl sm:text-2xl font-bold tabular-nums leading-tight break-words"
         style={{ fontFamily: "Outfit, Inter, sans-serif" }}
       >
         {formatValue(value, format)}

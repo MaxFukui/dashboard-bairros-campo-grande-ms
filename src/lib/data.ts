@@ -88,7 +88,8 @@ export function formatValue(value: number | null | undefined, format?: Indicator
     case "percent":
       return `${value.toFixed(2).replace(".", ",")}%`
     case "currency":
-      return `R$ ${value.toLocaleString("pt-BR")}`
+      // Whole reais — raw averages carry float noise like "10.261,802".
+      return `R$ ${Math.round(value).toLocaleString("pt-BR")}`
     case "km":
       return `${value.toFixed(2).replace(".", ",")} km`
     case "number":

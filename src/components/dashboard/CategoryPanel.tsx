@@ -44,7 +44,7 @@ export function CategoryPanel({ category, categoryIcons }: CategoryPanelProps) {
           </p>
           <Select value={selectedKey} onValueChange={(v) => v && setSelectedKey(v)}>
             <SelectTrigger className="w-full sm:w-[300px] h-9 text-sm">
-              <SelectValue />
+              <SelectValue>{activeIndicator.label}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {catIndicators.map((ind) => (

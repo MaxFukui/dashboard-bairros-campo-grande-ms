@@ -54,16 +54,16 @@ export function BentoTile({
       )}
     >
       {title && (
-        <header className="flex items-center gap-2 px-4 py-3 border-b border-[rgba(255,214,10,0.10)]">
+        <header className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-[rgba(255,214,10,0.10)]">
           {Icon && (
-            <span className="grid place-items-center w-7 h-7 rounded-md bg-[rgba(255,214,10,0.10)] text-gold">
+            <span className="grid place-items-center w-7 h-7 rounded-md bg-[rgba(255,214,10,0.10)] text-gold shrink-0">
               <Icon size={14} />
             </span>
           )}
-          <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gold/85 flex-1 leading-tight">
+          <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gold/85 flex-1 leading-tight min-w-32">
             {title}
           </h3>
-          {action}
+          {action && <div className="ml-auto min-w-0 max-w-full">{action}</div>}
         </header>
       )}
       <div className={cn("p-2 sm:p-3", bodyClassName)}>{children}</div>

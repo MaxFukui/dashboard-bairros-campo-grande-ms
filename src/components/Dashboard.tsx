@@ -8,6 +8,8 @@ import {
   BookOpen,
   Construction,
   LayoutGrid,
+  SearchCode,
+  Scale,
   MoreHorizontal,
 } from "lucide-react"
 import { type IndicatorCategory, getIndicatorsByCategory } from "@/lib/data"
@@ -32,7 +34,9 @@ const CATEGORY_ICONS: CategoryIconMap = {
   infraestrutura: Construction,
 }
 
-const TAB_COLORS = ["#ffd60a", "#ffc300", "#003566", "#0891b2"]
+// Single accent for the active tab — matches the desktop sidebar. (The old
+// per-tab palette included Oxford navy, invisible against the dark nav.)
+const NAV_ACTIVE = "#ffd60a"
 
 const CATEGORY_COUNTS: Record<IndicatorCategory, number> = {
   demografia: getIndicatorsByCategory("demografia").length,
@@ -48,14 +52,12 @@ function BottomNavItem({
   label,
   Icon,
   active,
-  color,
   onClick,
   badge,
 }: {
   label: string
   Icon: typeof LayoutGrid
   active: boolean
-  color: string
   onClick: () => void
   badge?: boolean
 }) {
@@ -63,7 +65,7 @@ function BottomNavItem({
     <button
       onClick={onClick}
       className="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors"
-      style={{ color: active ? color : "#94a3b8" }}
+      style={{ color: active ? NAV_ACTIVE : "#94a3b8" }}
     >
       <span className={`relative inline-flex${active ? " animate-breathe" : ""}`}>
         <Icon size={20} />
@@ -74,7 +76,9 @@ function BottomNavItem({
           />
         )}
       </span>
-      <span className="text-[10px] leading-none font-medium">{label}</span>
+      <span className={`text-[10px] leading-none ${active ? "font-semibold" : "font-medium"}`}>
+        {label}
+      </span>
     </button>
   )
 }
@@ -132,7 +136,7 @@ export default function Dashboard() {
   const headerCountPill = "74 bairros · 7 regiões urbanas"
 
   return (
-    <div className="min-h-screen flex flex-col text-foreground">
+    <div className="h-dvh flex flex-col text-foreground">
       {/* Header — slim, branded, glass */}
       <header className="sticky top-0 z-30 flex items-center justify-between px-3 md:px-5 py-3 shrink-0 border-b border-[rgba(255,214,10,0.10)] glass">
         <div className="flex items-center gap-3">
@@ -204,21 +208,21 @@ export default function Dashboard() {
       </div>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 md:hidden z-30 flex border-t border-[rgba(255,214,10,0.10)] glass">
+      <nav className="fixed bottom-0 left-0 right-0 md:hidden z-30 flex cg-bottomnav">
         <div
           aria-hidden
           className="absolute top-0 left-0 h-[3px] rounded-b"
           style={{
             width: "25%",
-            background: TAB_COLORS[activeTabIndex],
+            background: `linear-gradient(90deg, transparent, ${NAV_ACTIVE}, transparent)`,
             transform: `translateX(${activeTabIndex * 100}%)`,
-            transition: "transform 240ms cubic-bezier(.4,0,.2,1), background 240ms ease",
+            transition: "transform 240ms cubic-bezier(.4,0,.2,1)",
           }}
         />
-        <BottomNavItem label="Visão Geral" Icon={LayoutGrid} active={active === "overview"} color={TAB_COLORS[0]} onClick={() => navigate("overview")} />
-        <BottomNavItem label="Perfil" Icon={LayoutGrid} active={active === "compare"} color={TAB_COLORS[1]} onClick={() => navigate("compare")} />
-        <BottomNavItem label="Comparar" Icon={LayoutGrid} active={active === "multi"} color={TAB_COLORS[2]} onClick={() => navigate("multi")} />
-        <BottomNavItem label="Categorias" Icon={MoreHorizontal} active={isCategoryActive} color={TAB_COLORS[3]} onClick={openCategories} badge={categoryUnexplored} />
+        <BottomNavItem label="Visão Geral" Icon={LayoutGrid} active={active === "overview"} onClick={() => navigate("overview")} />
+        <BottomNavItem label="Perfil" Icon={SearchCode} active={active === "compare"} onClick={() => navigate("compare")} />
+        <BottomNavItem label="Comparar" Icon={Scale} active={active === "multi"} onClick={() => navigate("multi")} />
+        <BottomNavItem label="Categorias" Icon={MoreHorizontal} active={isCategoryActive} onClick={openCategories} badge={categoryUnexplored} />
       </nav>
 
       {/* Mobile categories sheet */}

@@ -101,8 +101,8 @@ export function OverviewPanel({ selectedBairro, onSelectBairro }: OverviewPanelP
                 Indicador
               </span>
               <Select value={mapIndicatorKey} onValueChange={(v) => v && setMapIndicatorKey(v)}>
-                <SelectTrigger className="h-8 text-sm w-[260px] sm:w-[320px] border-[rgba(255,214,10,0.18)]">
-                  <SelectValue />
+                <SelectTrigger className="h-8 text-sm w-[210px] sm:w-[320px] max-w-full border-[rgba(255,214,10,0.18)]">
+                  <SelectValue>{mapIndicator.label}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {indicators.map((ind) => (
@@ -117,7 +117,7 @@ export function OverviewPanel({ selectedBairro, onSelectBairro }: OverviewPanelP
         >
           <ChoroplethMap
             indicator={mapIndicator}
-            height={520}
+            height="clamp(340px, 58vh, 520px)"
             selectable
             selectedBairro={selectedBairro}
             onBairroClick={onSelectBairro}
