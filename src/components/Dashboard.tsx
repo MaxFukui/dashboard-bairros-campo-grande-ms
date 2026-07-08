@@ -11,6 +11,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useMemo, useEffect } from "react"
 import { BarChart, HorizontalBar, ScatterChart, PieChart } from "@/components/Charts"
+import { ChoroplethMap } from "@/components/ChoroplethMap"
 import {
   Users,
   Banknote,
@@ -28,6 +29,7 @@ import {
   AlertTriangle,
   MoreHorizontal,
   X,
+  Map,
   type LucideIcon,
 } from "lucide-react"
 
@@ -196,6 +198,9 @@ function PanelBox({
 }
 
 function OverviewPanel() {
+  const [mapIndicatorKey, setMapIndicatorKey] = useState("POPULACAO")
+  const mapIndicator = indicators.find((i) => i.key === mapIndicatorKey) ?? indicators[0]
+
   const totalPop = bairros.reduce((s, b) => s + getVal(b, "POPULACAO"), 0)
   const avgIncome = bairros.reduce((s, b) => s + getVal(b, "RENDA_ESTIMADA_2025"), 0) / bairros.length
   const avgUnemployment = bairros.reduce((s, b) => s + getVal(b, "DESOCUPADO_PCT"), 0) / bairros.length
@@ -220,6 +225,21 @@ function OverviewPanel() {
         <KPICard label="Bolsa Família" value={totalBolsaFamilia} format="number" Icon={HeartHandshake} note="2022" />
         <KPICard label="Viol. contra Mulheres" value={totalViolencia} format="number" Icon={AlertTriangle} note="2022" />
       </div>
+
+      <PanelBox title="Mapa dos bairros" Icon={Map}>
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 flex-wrap">
+          <span className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold">Indicador:</span>
+          <Select value={mapIndicatorKey} onValueChange={(v) => { if (v) setMapIndicatorKey(v) }}>
+            <SelectTrigger className="w-full sm:w-[320px] h-8 text-sm"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {indicators.map((ind) => (
+                <SelectItem key={ind.key} value={ind.key}>{ind.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <ChoroplethMap indicator={mapIndicator} height={520} />
+      </PanelBox>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <PanelBox title="População por bairro (Top 15)" Icon={Users}>

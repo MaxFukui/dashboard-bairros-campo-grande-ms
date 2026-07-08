@@ -1,4 +1,48 @@
-# React + TypeScript + Vite
+# Dashboard Bairros — Campo Grande, MS
+
+Painel interativo com indicadores socioeconômicos dos 74 bairros de
+Campo Grande, Mato Grosso do Sul.
+
+- **Stack:** React 19 · TypeScript · Vite · ECharts · Tailwind v4 · shadcn/ui
+- **Dados:** IBGE Censo Demográfico 2022 + CadÚnico 2022 + MS Transparência
+  (em `src/data/bairros.json`)
+- **Mapa:** shapefile IBGE dos bairros de CG convertido para GeoJSON
+  (em `public/geo/`)
+
+## Documentação
+
+- [`docs/geo-data.md`](docs/geo-data.md) — sistema de dados geográficos
+  (shapefile → GeoJSON/TopoJSON → mapa coroplético)
+- [`scripts/geo/README.md`](scripts/geo/README.md) — como re-gerar os
+  arquivos geo quando o IBGE publicar uma nova versão
+
+## Desenvolvimento
+
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # tsc + vite build
+npm run lint
+npm run preview  # serve dist/
+```
+
+## Estrutura
+
+```
+public/
+  shapefiles_bairros/    # shapefiles brutos e filtrados (CG)
+  geo/                   # GeoJSON + TopoJSON para o mapa
+
+src/
+  components/            # Dashboard, Charts, ChoroplethMap, ui/
+  data/bairros.json      # 74 bairros + 46 indicadores
+  lib/                   # data.ts (tipos + indicadores), geo.ts, utils.ts
+
+scripts/geo/             # scripts de conversão shapefile → GeoJSON → TopoJSON
+docs/                    # documentação
+```
+
+---
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
