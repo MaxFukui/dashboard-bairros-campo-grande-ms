@@ -14,7 +14,10 @@ const MAP_CONTAINER_CLASS = "cg-bairro-map"
 // limits between some neighborhoods.
 const BORDER_COLOR = "rgba(241, 245, 249, 0.75)"
 
-const COLOR_RAMP = ["#001d3d", "#003566", "#1d4ed8", "#ffc300", "#ffd60a"]
+// Positive/neutral indicators: navy → gold (high = notable/good).
+// Negative indicators: navy → red (high = worst) so hotspots read as warnings.
+const COLOR_RAMP_GOOD = ["#001d3d", "#003566", "#1d4ed8", "#ffc300", "#ffd60a"]
+const COLOR_RAMP_BAD = ["#001d3d", "#003566", "#991b1b", "#dc2626", "#f97316"]
 
 function lerpColor(a: string, b: string, t: number): string {
   const pa = parseInt(a.slice(1), 16)
@@ -27,12 +30,12 @@ function lerpColor(a: string, b: string, t: number): string {
   return `#${((r << 16) | (g << 8) | bl).toString(16).padStart(6, "0")}`
 }
 
-function valueToColor(t: number): string {
-  if (t <= 0) return COLOR_RAMP[0]
-  if (t >= 1) return COLOR_RAMP[COLOR_RAMP.length - 1]
-  const seg = t * (COLOR_RAMP.length - 1)
+function valueToColor(t: number, ramp: string[]): string {
+  if (t <= 0) return ramp[0]
+  if (t >= 1) return ramp[ramp.length - 1]
+  const seg = t * (ramp.length - 1)
   const i = Math.floor(seg)
-  return lerpColor(COLOR_RAMP[i], COLOR_RAMP[i + 1], seg - i)
+  return lerpColor(ramp[i], ramp[i + 1], seg - i)
 }
 
 interface ChoroplethMapProps {
@@ -227,7 +230,7 @@ export function ChoroplethMap({
       }
 
       return {
-        fillColor: valueToColor(t),
+        fillColor: valueToColor(t, indicator.higherIsBetter === false ? COLOR_RAMP_BAD : COLOR_RAMP_GOOD),
         fillOpacity: 0.55,
         color: BORDER_COLOR,
         weight: 1.1,
@@ -328,6 +331,12 @@ export function ChoroplethMap({
     return { min: Math.min(...values), max: Math.max(...values) }
   }, [indicator.key])
 
+  const isBad = indicator.higherIsBetter === false
+  const ramp = isBad ? COLOR_RAMP_BAD : COLOR_RAMP_GOOD
+  const legendGradient = `linear-gradient(90deg, ${ramp
+    .map((c, i) => `${c} ${(i / (ramp.length - 1)) * 100}%`)
+    .join(", ")})`
+
   return (
     <Card className={cn("overflow-hidden", className)}>
       <CardHeader className="pb-2">
@@ -341,8 +350,10 @@ export function ChoroplethMap({
             style={{ height: "100%", width: "100%" }}
           />
           <div className="cg-legend" aria-hidden>
-            <div className="cg-legend__title">{indicator.label}</div>
-            <div className="cg-legend__bar" />
+            <div className="cg-legend__title" style={isBad ? { color: "#f87171" } : undefined}>
+              {indicator.label}
+            </div>
+            <div className="cg-legend__bar" style={{ background: legendGradient }} />
             <div className="cg-legend__labels">
               <span>{formatValue(legendScale.min, indicator.format)}</span>
               <span>{formatValue(legendScale.max, indicator.format)}</span>
@@ -350,8 +361,13 @@ export function ChoroplethMap({
           </div>
         </div>
         <div className="px-3 py-2 text-[10px] text-slate-500">
-          <span className="text-gold/80 font-semibold">Como ler:</span>{" "}
-          azul-marinho = baixo, dourado = alto · clique num bairro para abrir o perfil.
+          <span className={`${isBad ? "text-red-400/90" : "text-gold/80"} font-semibold`}>
+            Como ler:
+          </span>{" "}
+          {isBad
+            ? "azul-marinho = baixo, vermelho = alto (pior)"
+            : "azul-marinho = baixo, dourado = alto"}{" "}
+          · clique num bairro para abrir o perfil.
         </div>
       </CardContent>
     </Card>

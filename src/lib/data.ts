@@ -157,6 +157,10 @@ function transformData(raw: Record<string, unknown>[]): BairroData[] {
     "ÁREAS PÚBLICAS (HECTARE)": "AREAS_PUBLICAS_HA",
   }
 
+  // These source columns store fractions (0–1) while every other percent
+  // column is 0–100 — normalize so "83%" doesn't render as "0,83%".
+  const fractionKeys = new Set(["NAO_PAVIMENTADA_PCT", "PAVIMENTADA_PCT"])
+
   return raw.map((row) => {
     const valores: Record<string, number> = {}
     for (const [origKey, val] of Object.entries(row)) {
@@ -164,7 +168,8 @@ function transformData(raw: Record<string, unknown>[]): BairroData[] {
       if (mapped === "id") continue
       if (mapped === "nome") continue
       if (mapped) {
-        valores[mapped] = typeof val === "number" ? val : 0
+        const num = typeof val === "number" ? val : 0
+        valores[mapped] = fractionKeys.has(mapped) ? num * 100 : num
       }
     }
     return {

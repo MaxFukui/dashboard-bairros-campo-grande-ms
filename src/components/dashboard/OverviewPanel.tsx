@@ -177,10 +177,11 @@ export function OverviewPanel({ selectedBairro, onSelectBairro }: OverviewPanelP
       {/* Footer note — transparent callout that explains the redesign shift */}
       <p className="text-[11px] text-slate-500 max-w-2xl">
         <span className="text-gold/80 font-semibold">Notas sobre os dados:</span>{" "}
-        Rankings respeitam o sentido do indicador (menor é melhor para desocupação,
-        analfabetismo e moradias precárias). A "Distribuição populacional" agora
-        agrupa por Região Urbana — 7 fatias — em vez de empilhar 64 bairros sob
-        o rótulo "Outros".
+        Indicadores negativos (desocupação, moradias precárias, vias não
+        pavimentadas…) mostram os <span className="text-red-400/90">piores casos
+        primeiro, em vermelho</span> — um "top" dos melhores seria uma lista de
+        zeros, sem insight. A "Distribuição populacional" agrupa por Região
+        Urbana — 7 fatias — em vez de empilhar 64 bairros sob o rótulo "Outros".
       </p>
     </div>
   )

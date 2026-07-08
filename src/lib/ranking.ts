@@ -4,14 +4,26 @@
 import type { IndicatorDef, BairroData } from "@/lib/data"
 import { bairros, getVal } from "@/lib/data"
 
-/** Default sort order respecting higherIsBetter. "best" first by default. */
+/**
+ * Rankings always surface the informative extreme: largest values first.
+ * For negative indicators (higherIsBetter === false) the largest values
+ * are the worst cases — sorting ascending would "top" the chart with
+ * rows of zeros (e.g. every fully-paved bairro under "vias não
+ * pavimentadas"), which carries no insight.
+ */
 export function defaultSortOrder(indicator: IndicatorDef): "asc" | "desc" {
-  return indicator.higherIsBetter === false ? "asc" : "desc"
+  void indicator
+  return "desc"
 }
 
-/** Label for a ranking prefix given the sort order: "Melhores" when the best is on top. */
+/** True when the top of the ranking shows the worst cases (negative indicator). */
+export function isWorstFirst(indicator: IndicatorDef): boolean {
+  return indicator.higherIsBetter === false
+}
+
+/** Label for a ranking prefix given the sort order: "Piores" when the worst is on top. */
 export function rankingPrefix(indicator: IndicatorDef): string {
-  return indicator.higherIsBetter === false ? "Piores" : "Maiores"
+  return isWorstFirst(indicator) ? "Piores" : "Maiores"
 }
 
 /** Title prefix used on bar charts and KPI strip. */

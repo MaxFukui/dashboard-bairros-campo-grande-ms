@@ -9,6 +9,7 @@ import {
 } from "@/lib/data"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BarChart, HorizontalBar } from "@/components/Charts"
+import { isWorstFirst, rankingPrefix } from "@/lib/ranking"
 import { BentoTile } from "./BentoTile"
 import { RankingTable } from "./RankingTable"
 import type { CategoryIconMap } from "./types"
@@ -75,7 +76,22 @@ export function CategoryPanel({ category, categoryIcons }: CategoryPanelProps) {
       </BentoTile>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <BentoTile title={activeIndicator.label} Icon={CatIcon}>
+        <BentoTile
+          title={activeIndicator.label}
+          Icon={CatIcon}
+          action={
+            <span
+              className={cn(
+                "text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap",
+                isWorstFirst(activeIndicator)
+                  ? "text-red-400 border-red-500/40 bg-red-500/10"
+                  : "text-gold border-gold/30 bg-gold/10",
+              )}
+            >
+              {rankingPrefix(activeIndicator)} primeiro
+            </span>
+          }
+        >
           <div className="h-56 sm:h-72 md:h-80">
             {chartType === "bar" ? (
               <BarChart

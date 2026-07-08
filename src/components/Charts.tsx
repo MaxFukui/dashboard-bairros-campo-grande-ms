@@ -15,7 +15,7 @@ import {
 import { CanvasRenderer } from "echarts/renderers"
 
 import { type BairroData, getVal, formatValue, type IndicatorDef } from "@/lib/data"
-import { defaultSortOrder, sortByIndicator } from "@/lib/ranking"
+import { defaultSortOrder, sortByIndicator, isWorstFirst } from "@/lib/ranking"
 import {
   CHART_PALETTE,
   shortRegiao,
@@ -45,6 +45,20 @@ interface BarChartProps {
 
 export function BarChart({ data, indicatorKey, indicator, limit = 15, ascending }: BarChartProps) {
   const order = ascending ?? (defaultSortOrder(indicator) === "asc")
+  // Negative indicators rank worst-first — color them as a warning, not a win.
+  const worst = isWorstFirst(indicator)
+  const barGradient = worst
+    ? [
+        { offset: 0, color: "#f87171" },
+        { offset: 0.55, color: "#dc2626" },
+        { offset: 1, color: "#450a0a" },
+      ]
+    : [
+        { offset: 0, color: "#ffd60a" },
+        { offset: 0.55, color: "#ffc300" },
+        { offset: 1, color: "#7a4c00" },
+      ]
+  const glow = worst ? "rgba(220, 38, 38, 0.4)" : "rgba(255, 211, 0, 0.35)"
   const sorted = [...data]
     .sort((a, b) => {
       const va = getVal(a, indicatorKey)
@@ -101,13 +115,9 @@ export function BarChart({ data, indicatorKey, indicator, limit = 15, ascending 
         data: values.map((v, i) => ({
           value: v,
           itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: "#ffd60a" },
-              { offset: 0.55, color: "#ffc300" },
-              { offset: 1, color: "#7a4c00" },
-            ]),
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, barGradient),
             borderRadius: [8, 8, 2, 2],
-            shadowColor: "rgba(255, 211, 0, 0.35)",
+            shadowColor: glow,
             shadowBlur: i === 0 ? 14 : 0,
           },
         })),
@@ -127,6 +137,7 @@ interface HorizontalBarProps {
 }
 
 export function HorizontalBar({ data, indicatorKey, indicator, limit = 20 }: HorizontalBarProps) {
+  const worst = isWorstFirst(indicator)
   const sorted = sortByIndicator(data, indicator, limit)
   const reversed = [...sorted].reverse()
   const names = reversed.map((b) => b.nome)
@@ -162,9 +173,15 @@ export function HorizontalBar({ data, indicatorKey, indicator, limit = 20 }: Hor
         data: values.map((v) => {
           const ratio = v / maxVal
           let color = "#003566"
-          if (ratio > 0.75) color = "#ffd60a"
-          else if (ratio > 0.5) color = "#ffc300"
-          else if (ratio > 0.25) color = "#1d4ed8"
+          if (worst) {
+            if (ratio > 0.75) color = "#ef4444"
+            else if (ratio > 0.5) color = "#f97316"
+            else if (ratio > 0.25) color = "#991b1b"
+          } else {
+            if (ratio > 0.75) color = "#ffd60a"
+            else if (ratio > 0.5) color = "#ffc300"
+            else if (ratio > 0.25) color = "#1d4ed8"
+          }
           return {
             value: v,
             itemStyle: { color, borderRadius: [0, 8, 8, 0] },

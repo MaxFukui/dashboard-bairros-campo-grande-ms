@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import { type IndicatorDef, bairros, getVal, formatValue } from "@/lib/data"
-import { sortByIndicator, rankingPrefix } from "@/lib/ranking"
+import { sortByIndicator, rankingPrefix, isWorstFirst } from "@/lib/ranking"
+import { cn } from "@/lib/utils"
 
 export function RankingTable({
   indicator,
@@ -16,6 +17,7 @@ export function RankingTable({
 
   const max = Math.max(...bairros.map((b) => getVal(b, indicator.key)), 1)
   const label = rankingPrefix(indicator)
+  const worst = isWorstFirst(indicator)
 
   return (
     <table className="w-full text-xs">
@@ -31,13 +33,18 @@ export function RankingTable({
         {sorted.map((b, i) => {
           const val = getVal(b, indicator.key)
           const pct = (val / max) * 100
-          // Colour scale by rank position (gold for top rank, navy for last).
+          // Colour scale by rank position — gold for the biggest values,
+          // or red when the top of the table is the worst cases.
           const ratio = i / Math.max(sorted.length - 1, 1)
-          const barColor =
-            ratio < 0.15 ? "#ffd60a" :
-            ratio < 0.40 ? "#ffc300" :
-            ratio < 0.70 ? "#1d4ed8" :
-            "#003566"
+          const barColor = worst
+            ? ratio < 0.15 ? "#ef4444" :
+              ratio < 0.40 ? "#f97316" :
+              ratio < 0.70 ? "#991b1b" :
+              "#003566"
+            : ratio < 0.15 ? "#ffd60a" :
+              ratio < 0.40 ? "#ffc300" :
+              ratio < 0.70 ? "#1d4ed8" :
+              "#003566"
           return (
             <tr
               key={b.nome}
@@ -45,7 +52,12 @@ export function RankingTable({
             >
               <td className="py-1.5 px-2 text-slate-500 text-right tabular-nums">{i + 1}</td>
               <td className="py-1.5 px-2 font-medium text-slate-100">{b.nome}</td>
-              <td className="py-1.5 px-2 text-right tabular-nums text-gold font-semibold">
+              <td
+                className={cn(
+                  "py-1.5 px-2 text-right tabular-nums font-semibold",
+                  worst ? "text-red-400" : "text-gold",
+                )}
+              >
                 {formatValue(val, indicator.format)}
               </td>
               <td className="py-1.5 px-2">
