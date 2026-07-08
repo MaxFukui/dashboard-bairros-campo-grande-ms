@@ -105,6 +105,25 @@
   100% { opacity: 1; transform: scale(1); }
 }
 
+/* One-shot gold ring that fades out — signals "this card just updated".
+ * Re-triggered by remounting the element (key={selectedBairro}). Only
+ * box-shadow is animated so the element's own styles return untouched. */
+@keyframes select-flash {
+  0% {
+    box-shadow:
+      0 0 0 2px rgba(255, 214, 10, 0.85),
+      0 0 30px -4px rgba(255, 214, 10, 0.55);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(255, 214, 10, 0),
+      0 0 30px -4px rgba(255, 214, 10, 0);
+  }
+}
+.select-flash {
+  animation: select-flash 1.2s ease-out;
+}
+
 @keyframes glow-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0); }
   50%      { box-shadow: 0 0 0 8px rgba(255, 214, 10, 0.06); }
@@ -362,6 +381,15 @@
   font-size: 11px;
   color: #f1f5f9;
   -webkit-text-stroke: 0.8px rgba(0, 8, 20, 0.85);
+  /* Rest dimmed to avoid clutter; --cg-label-dim is set per zoom level. */
+  opacity: var(--cg-label-dim, 0.35);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+/* Hovered / tapped bairro: its label surfaces to full strength. */
+.cg-label--small.cg-label--hot span {
+  opacity: 1;
+  transform: scale(1.12);
+  color: #ffd60a;
 }
 
 .cg-legend {

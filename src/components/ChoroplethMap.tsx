@@ -56,6 +56,7 @@ export function ChoroplethMap({
   const mapRef = useRef<L.Map | null>(null)
   const geoJsonLayerRef = useRef<L.GeoJSON | null>(null)
   const labelLayerRef = useRef<L.LayerGroup | null>(null)
+  const labelMarkersRef = useRef<Map<number, L.Marker>>(new Map())
   const readyRef = useRef(false)
   const onBairroClickRef = useRef(onBairroClick)
   const selectedRef = useRef(selectedBairro)
@@ -116,6 +117,13 @@ export function ChoroplethMap({
     const lg = labelLayerRef.current
     if (!lg) return
     lg.clearLayers()
+    labelMarkersRef.current.clear()
+
+    // Labels rest dimmed so the map isn't cluttered; the hovered/tapped
+    // bairro's label comes to full opacity. More zoom = more room = more
+    // resting visibility.
+    const dim = zoom >= 14 ? "0.7" : zoom === 13 ? "0.4" : "0.25"
+    mapRef.current?.getContainer().style.setProperty("--cg-label-dim", dim)
 
     const selected = selectedRef.current
 
@@ -147,7 +155,7 @@ export function ChoroplethMap({
         if (b.nome === selected) continue
         const c = featureCentroid(f)
         if (!c) continue
-        L.marker(c, {
+        const marker = L.marker(c, {
           icon: L.divIcon({
             className: "cg-label cg-label--small",
             html: `<span>${b.nome}</span>`,
@@ -156,6 +164,7 @@ export function ChoroplethMap({
           }),
           interactive: false,
         }).addTo(lg)
+        labelMarkersRef.current.set(f.properties.id_bairro, marker)
       }
     }
   }, [])
@@ -257,10 +266,18 @@ export function ChoroplethMap({
           const l = e.target as L.Path
           l.setStyle({ weight: 2.4, color: "#ffd60a", dashArray: "" })
           l.bringToFront()
+          labelMarkersRef.current
+            .get(props.id_bairro ?? -1)
+            ?.getElement()
+            ?.classList.add("cg-label--hot")
         },
         mouseout: (e) => {
           const l = e.target as L.Path
           geoJsonLayerRef.current?.resetStyle(l)
+          labelMarkersRef.current
+            .get(props.id_bairro ?? -1)
+            ?.getElement()
+            ?.classList.remove("cg-label--hot")
         },
       })
     }

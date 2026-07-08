@@ -45,7 +45,11 @@ export function ComparisonPanel({
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3 flex-wrap">
-        <BentoTile variant="glass" className="flex-1 min-w-[280px] p-3">
+        <BentoTile
+          key={bairro.nome}
+          variant="glass"
+          className="flex-1 min-w-[280px] p-3 select-flash"
+        >
           <div className="flex items-center gap-3">
             <span className="grid place-items-center w-10 h-10 rounded-xl bg-gold text-ink">
               <SearchCode size={18} />
@@ -55,7 +59,7 @@ export function ComparisonPanel({
                 Perfil de bairro
               </p>
               <p
-                className="text-xl font-bold text-gold leading-tight"
+                className="text-xl font-bold text-gold leading-tight animate-pop"
                 style={{ fontFamily: "Outfit" }}
               >
                 {bairro.nome}
@@ -77,9 +81,11 @@ export function ComparisonPanel({
         </Select>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard label="População" value={getVal(bairro, "POPULACAO")} format="number" Icon={Users} />
+      {/* key remounts the grid on bairro change so the flash replays */}
+      <div key={`kpi-${bairro.nome}`} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KpiCard className="select-flash" label="População" value={getVal(bairro, "POPULACAO")} format="number" Icon={Users} />
         <KpiCard
+          className="select-flash"
           label="Renda Estimada"
           value={getVal(bairro, "RENDA_ESTIMADA_2025")}
           format="currency"
@@ -87,6 +93,7 @@ export function ComparisonPanel({
           note="2025"
         />
         <KpiCard
+          className="select-flash"
           label="Desocupação"
           value={getVal(bairro, "DESOCUPADO_PCT")}
           format="percent"
@@ -94,6 +101,7 @@ export function ComparisonPanel({
           accent="#f97316"
         />
         <KpiCard
+          className="select-flash"
           label="Vias Pavimentadas"
           value={getVal(bairro, "PAVIMENTADA_PCT")}
           format="percent"
@@ -122,11 +130,11 @@ export function ComparisonPanel({
         />
       </BentoTile>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div key={`cats-${bairro.nome}`} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.map((cat) => {
           const CatIcon = categoryIcons[cat]
           return (
-            <BentoTile key={cat} title={categoryLabels[cat]} Icon={CatIcon} variant="glass">
+            <BentoTile key={cat} title={categoryLabels[cat]} Icon={CatIcon} variant="glass" className="select-flash">
               <ul className="divide-y divide-[rgba(255,214,10,0.06)] text-xs">
                 {getIndicatorsByCategory(cat).map((ind) => (
                   <li
