@@ -1,17 +1,4 @@
-import {
-  type IndicatorDef,
-  formatValue,
-  type IndicatorCategory,
-  categoryLabels,
-  getIndicatorsByCategory,
-  indicators,
-  bairros,
-  getVal,
-} from "@/lib/data"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useState, useMemo, useEffect } from "react"
-import { BarChart, HorizontalBar, ScatterChart, PieChart } from "@/components/Charts"
-import { ChoroplethMap } from "@/components/ChoroplethMap"
+import { useState, useEffect } from "react"
 import {
   Users,
   Banknote,
@@ -20,24 +7,22 @@ import {
   Activity,
   BookOpen,
   Construction,
-  LayoutDashboard,
-  SearchCode,
-  Scale,
-  ClipboardList,
-  TrendingDown,
-  Route,
-  AlertTriangle,
+  LayoutGrid,
   MoreHorizontal,
-  X,
-  Map,
-  type LucideIcon,
 } from "lucide-react"
+import { type IndicatorCategory, getIndicatorsByCategory } from "@/lib/data"
+import { OverviewPanel } from "@/components/dashboard/OverviewPanel"
+import { ComparisonPanel } from "@/components/dashboard/ComparisonPanel"
+import { MultiComparePanel } from "@/components/dashboard/MultiComparePanel"
+import { defaultPairState } from "@/lib/charts-helpers"
+import { CategoryPanel } from "@/components/dashboard/CategoryPanel"
+import {
+  SidebarContent,
+  MobileCategorySheet,
+} from "@/components/dashboard/Sidebar"
+import type { ActiveSection, CategoryIconMap } from "@/components/dashboard/types"
 
-type ActiveSection = "overview" | "compare" | "multi" | IndicatorCategory
-
-const TAB_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6"]
-
-const CATEGORY_ICONS: Record<IndicatorCategory, LucideIcon> = {
+const CATEGORY_ICONS: CategoryIconMap = {
   demografia: Users,
   economia: Banknote,
   habitacao: Home,
@@ -47,434 +32,16 @@ const CATEGORY_ICONS: Record<IndicatorCategory, LucideIcon> = {
   infraestrutura: Construction,
 }
 
-function SidebarContent({
-  active,
-  onNavigate,
-}: {
-  active: ActiveSection
-  onNavigate: (section: ActiveSection) => void
-}) {
-  return (
-    <>
-      <nav className="p-2 pt-3 space-y-0.5">
-        <NavItem label="Visão Geral" Icon={LayoutDashboard} active={active === "overview"} onClick={() => onNavigate("overview")} />
-        <NavItem label="Perfil de Bairro" Icon={SearchCode} active={active === "compare"} onClick={() => onNavigate("compare")} />
-        <NavItem label="Comparar" Icon={Scale} active={active === "multi"} onClick={() => onNavigate("multi")} />
-      </nav>
+const TAB_COLORS = ["#ffd60a", "#ffc300", "#003566", "#0891b2"]
 
-      <div className="mx-3 my-2 border-t" style={{ borderColor: "#2d4a5f" }} />
-
-      <div className="px-3 mb-1.5">
-        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#64748b" }}>
-          Por Categoria
-        </p>
-      </div>
-
-      <nav className="px-2 pb-2 space-y-0.5">
-        {(Object.keys(CATEGORY_ICONS) as IndicatorCategory[]).map((cat) => (
-          <NavItem
-            key={cat}
-            label={categoryLabels[cat]}
-            Icon={CATEGORY_ICONS[cat]}
-            active={active === cat}
-            onClick={() => onNavigate(cat)}
-          />
-        ))}
-      </nav>
-
-      <div className="mt-auto px-3 py-3 text-[10px] leading-relaxed" style={{ color: "#475569" }}>
-        Fontes: Censo IBGE 2010 · CadÚnico 2022 · MS Transparência
-      </div>
-    </>
-  )
-}
-
-function KPICard({
-  label,
-  value,
-  format,
-  Icon,
-  note,
-}: {
-  label: string
-  value: number
-  format: IndicatorDef["format"]
-  Icon?: LucideIcon
-  note?: string
-}) {
-  return (
-    <div className="bg-white border border-slate-200 rounded p-3">
-      <div className="flex items-start justify-between gap-1">
-        <p className="text-xs text-slate-500 leading-tight">{label}</p>
-        {Icon && <Icon size={16} className="text-slate-400 shrink-0 mt-0.5" />}
-      </div>
-      <p className="text-lg font-bold text-slate-800 mt-1 tabular-nums">{formatValue(value, format)}</p>
-      {note && <p className="text-[10px] text-slate-400 mt-0.5">{note}</p>}
-    </div>
-  )
-}
-
-function RankingTable({ indicator, limit = 74 }: { indicator: IndicatorDef; limit?: number }) {
-  const order = indicator.higherIsBetter === false ? "asc" : "desc"
-  const sorted = useMemo(
-    () =>
-      [...bairros]
-        .sort((a, b) => {
-          const va = getVal(a, indicator.key)
-          const vb = getVal(b, indicator.key)
-          return order === "desc" ? vb - va : va - vb
-        })
-        .slice(0, limit),
-    [indicator, limit, order]
-  )
-  const max = Math.max(...bairros.map((b) => getVal(b, indicator.key)), 1)
-
-  return (
-    <table className="w-full text-xs">
-      <thead className="sticky top-0">
-        <tr className="bg-slate-100 text-slate-600 text-left">
-          <th className="py-1.5 px-2 w-7">#</th>
-          <th className="py-1.5 px-2">Bairro</th>
-          <th className="py-1.5 px-2 text-right">Valor</th>
-          <th className="py-1.5 px-2 w-24">Dist.</th>
-        </tr>
-      </thead>
-      <tbody>
-        {sorted.map((b, i) => {
-          const val = getVal(b, indicator.key)
-          const pct = (val / max) * 100
-          const isGood = indicator.higherIsBetter !== false
-          const barColor =
-            isGood
-              ? pct > 66 ? "#16a34a" : pct > 33 ? "#ca8a04" : "#dc2626"
-              : pct > 66 ? "#dc2626" : pct > 33 ? "#ca8a04" : "#16a34a"
-          return (
-            <tr key={b.nome} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-              <td className="py-1 px-2 text-slate-400 text-right tabular-nums">{i + 1}</td>
-              <td className="py-1 px-2 font-medium text-slate-700">{b.nome}</td>
-              <td className="py-1 px-2 text-right tabular-nums text-slate-800">{formatValue(val, indicator.format)}</td>
-              <td className="py-1 px-2">
-                <div className="h-3 bg-slate-200 rounded-sm overflow-hidden">
-                  <div className="h-full rounded-sm" style={{ width: `${pct}%`, backgroundColor: barColor }} />
-                </div>
-              </td>
-            </tr>
-          )
-        })}
-      </tbody>
-    </table>
-  )
-}
-
-function SectionHeader({ title, Icon }: { title: string; Icon?: LucideIcon }) {
-  return (
-    <div className="flex items-center gap-2 border-b border-slate-200 pb-2 mb-4">
-      {Icon && <Icon size={14} className="text-slate-500 shrink-0" />}
-      <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{title}</h2>
-    </div>
-  )
-}
-
-function PanelBox({
-  title,
-  Icon,
-  children,
-  className = "",
-}: {
-  title: string
-  Icon?: LucideIcon
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <div className={`bg-white border border-slate-200 rounded overflow-hidden ${className}`}>
-      <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex items-center gap-2">
-        {Icon && <Icon size={13} className="text-slate-500 shrink-0" />}
-        <p className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide">{title}</p>
-      </div>
-      {children}
-    </div>
-  )
-}
-
-function OverviewPanel() {
-  const [mapIndicatorKey, setMapIndicatorKey] = useState("POPULACAO")
-  const mapIndicator = indicators.find((i) => i.key === mapIndicatorKey) ?? indicators[0]
-
-  const totalPop = bairros.reduce((s, b) => s + getVal(b, "POPULACAO"), 0)
-  const avgIncome = bairros.reduce((s, b) => s + getVal(b, "RENDA_ESTIMADA_2025"), 0) / bairros.length
-  const avgUnemployment = bairros.reduce((s, b) => s + getVal(b, "DESOCUPADO_PCT"), 0) / bairros.length
-  const avgPaved = bairros.reduce((s, b) => s + getVal(b, "PAVIMENTADA_PCT"), 0) / bairros.length
-  const totalCadUnico = bairros.reduce((s, b) => s + getVal(b, "CADUNICO"), 0)
-  const totalBolsaFamilia = bairros.reduce((s, b) => s + getVal(b, "BOLSA_FAMILIA"), 0)
-  const totalViolencia = bairros.reduce((s, b) => s + getVal(b, "MULHERES_VIOLENCIA"), 0)
-
-  const popInd = indicators[0]
-  const rendaInd = indicators.find((i) => i.key === "RENDA_ESTIMADA_2025")!
-
-  return (
-    <div className="space-y-5">
-      <SectionHeader title="Indicadores consolidados — 74 bairros" Icon={LayoutDashboard} />
-
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
-        <KPICard label="População Total" value={totalPop} format="number" Icon={Users} note="74 bairros" />
-        <KPICard label="Renda Média" value={avgIncome} format="currency" Icon={Banknote} note="estimada 2025" />
-        <KPICard label="Desocupação Média" value={avgUnemployment} format="percent" Icon={TrendingDown} note="2022" />
-        <KPICard label="Vias Pavimentadas" value={avgPaved} format="percent" Icon={Route} note="média" />
-        <KPICard label="CadÚnico" value={totalCadUnico} format="number" Icon={ClipboardList} note="2022" />
-        <KPICard label="Bolsa Família" value={totalBolsaFamilia} format="number" Icon={HeartHandshake} note="2022" />
-        <KPICard label="Viol. contra Mulheres" value={totalViolencia} format="number" Icon={AlertTriangle} note="2022" />
-      </div>
-
-      <PanelBox title="Mapa dos bairros" Icon={Map}>
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 flex-wrap">
-          <span className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold">Indicador:</span>
-          <Select value={mapIndicatorKey} onValueChange={(v) => { if (v) setMapIndicatorKey(v) }}>
-            <SelectTrigger className="w-full sm:w-[320px] h-8 text-sm"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {indicators.map((ind) => (
-                <SelectItem key={ind.key} value={ind.key}>{ind.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <ChoroplethMap indicator={mapIndicator} height={520} />
-      </PanelBox>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <PanelBox title="População por bairro (Top 15)" Icon={Users}>
-          <div className="h-52 sm:h-60 md:h-72 p-2">
-            <BarChart data={bairros} indicatorKey="POPULACAO" indicator={popInd} limit={15} />
-          </div>
-        </PanelBox>
-        <PanelBox title="Renda familiar estimada (Top 15)" Icon={Banknote}>
-          <div className="h-52 sm:h-60 md:h-72 p-2">
-            <BarChart data={bairros} indicatorKey="RENDA_ESTIMADA_2025" indicator={rendaInd} limit={15} />
-          </div>
-        </PanelBox>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <PanelBox title="Desocupação vs Renda" Icon={Scale}>
-          <div className="h-52 sm:h-60 md:h-72 p-2">
-            <ScatterChart
-              data={bairros}
-              xKey="DESOCUPADO_PCT"
-              yKey="RENDA_ESTIMADA_2025"
-              xLabel="Desocupação (%)"
-              yLabel="Renda (R$)"
-              sizeKey="POPULACAO"
-            />
-          </div>
-        </PanelBox>
-        <PanelBox title="Distribuição populacional" Icon={Users}>
-          <div className="h-52 sm:h-60 md:h-72 p-2">
-            <PieChart data={bairros} indicatorKey="POPULACAO" limit={10} />
-          </div>
-        </PanelBox>
-      </div>
-    </div>
-  )
-}
-
-function ComparisonPanel() {
-  const [selectedBairro, setSelectedBairro] = useState("CARANDÁ")
-  const bairro = useMemo(() => bairros.find((b) => b.nome === selectedBairro), [selectedBairro])
-
-  if (!bairro) return null
-
-  const categories: IndicatorCategory[] = [
-    "demografia", "economia", "habitacao", "social", "saude", "educacao", "infraestrutura",
-  ]
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4 flex-wrap">
-        <SectionHeader title="Perfil de bairro" Icon={SearchCode} />
-        <Select value={selectedBairro} onValueChange={(v) => { if (v) setSelectedBairro(v) }}>
-          <SelectTrigger className="w-full sm:w-[220px] h-8 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {bairros.map((b) => (
-              <SelectItem key={b.nome} value={b.nome}>{b.nome}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <KPICard label="População" value={getVal(bairro, "POPULACAO")} format="number" Icon={Users} />
-        <KPICard label="Renda Estimada" value={getVal(bairro, "RENDA_ESTIMADA_2025")} format="currency" Icon={Banknote} note="2025" />
-        <KPICard label="Desocupação" value={getVal(bairro, "DESOCUPADO_PCT")} format="percent" Icon={TrendingDown} />
-        <KPICard label="Vias Pavimentadas" value={getVal(bairro, "PAVIMENTADA_PCT")} format="percent" Icon={Route} />
-      </div>
-
-      {categories.map((cat) => {
-        const CatIcon = CATEGORY_ICONS[cat]
-        return (
-          <PanelBox key={cat} title={categoryLabels[cat]} Icon={CatIcon}>
-            <table className="w-full text-xs">
-              <tbody>
-                {getIndicatorsByCategory(cat).map((ind, i) => (
-                  <tr key={ind.key} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                    <td className="py-1.5 px-4 text-slate-500">{ind.label}</td>
-                    <td className="py-1.5 px-4 text-right font-semibold text-slate-800 tabular-nums">
-                      {formatValue(getVal(bairro, ind.key), ind.format)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </PanelBox>
-        )
-      })}
-    </div>
-  )
-}
-
-function MultiComparePanel() {
-  const [b1, setB1] = useState("CARANDÁ")
-  const [b2, setB2] = useState("CENTRO OESTE")
-  const bairro1 = bairros.find((b) => b.nome === b1)!
-  const bairro2 = bairros.find((b) => b.nome === b2)!
-
-  const diffIndicators = indicators
-    .filter((ind) => getVal(bairro1, ind.key) !== getVal(bairro2, ind.key))
-    .slice(0, 35)
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <SectionHeader title="Comparação entre bairros" Icon={Scale} />
-        <Select value={b1} onValueChange={(v) => { if (v) setB1(v) }}>
-          <SelectTrigger className="w-full sm:w-[180px] h-8 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>{bairros.map((b) => <SelectItem key={b.nome} value={b.nome}>{b.nome}</SelectItem>)}</SelectContent>
-        </Select>
-        <span className="text-sm text-slate-400 font-semibold">vs</span>
-        <Select value={b2} onValueChange={(v) => { if (v) setB2(v) }}>
-          <SelectTrigger className="w-full sm:w-[180px] h-8 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>{bairros.map((b) => <SelectItem key={b.nome} value={b.nome}>{b.nome}</SelectItem>)}</SelectContent>
-        </Select>
-      </div>
-
-      <PanelBox title={`${bairro1.nome}  ×  ${bairro2.nome}`} Icon={Scale}>
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="bg-slate-100 text-slate-600 text-left">
-              <th className="py-2 px-4">Indicador</th>
-              <th className="text-right py-2 px-4">{bairro1.nome}</th>
-              <th className="text-right py-2 px-4">{bairro2.nome}</th>
-              <th className="text-right py-2 px-4">Diferença</th>
-            </tr>
-          </thead>
-          <tbody>
-            {diffIndicators.map((ind, i) => {
-              const v1 = getVal(bairro1, ind.key)
-              const v2 = getVal(bairro2, ind.key)
-              const diff = v1 - v2
-              return (
-                <tr key={ind.key} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                  <td className="py-1.5 px-4 text-slate-600">{ind.label}</td>
-                  <td className="text-right py-1.5 px-4 tabular-nums font-medium text-slate-800">{formatValue(v1, ind.format)}</td>
-                  <td className="text-right py-1.5 px-4 tabular-nums font-medium text-slate-800">{formatValue(v2, ind.format)}</td>
-                  <td
-                    className={`text-right py-1.5 px-4 tabular-nums font-semibold ${
-                      diff > 0 ? "text-green-700" : diff < 0 ? "text-red-700" : "text-slate-400"
-                    }`}
-                  >
-                    {diff > 0 ? "+" : ""}
-                    {formatValue(diff, ind.format)}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </PanelBox>
-    </div>
-  )
-}
-
-function CategoryPanel({ category }: { category: IndicatorCategory }) {
-  const catIndicators = getIndicatorsByCategory(category)
-  const [selectedKey, setSelectedKey] = useState(catIndicators[0]?.key ?? "POPULACAO")
-  const activeIndicator = catIndicators.find((i) => i.key === selectedKey) ?? catIndicators[0]
-  const [chartType, setChartType] = useState<"bar" | "horizontal">("bar")
-  const CatIcon = CATEGORY_ICONS[category]
-
-  if (!activeIndicator) return null
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <SectionHeader title={categoryLabels[category]} Icon={CatIcon} />
-        <Select value={selectedKey} onValueChange={(v) => { if (v) setSelectedKey(v) }}>
-          <SelectTrigger className="w-full sm:w-[300px] h-8 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {catIndicators.map((ind) => (
-              <SelectItem key={ind.key} value={ind.key}>{ind.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="flex border border-slate-200 rounded overflow-hidden text-[11px]">
-          {(["bar", "horizontal"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setChartType(t)}
-              className={`px-3 py-1.5 transition-colors ${
-                chartType === t ? "bg-[#1a2d3d] text-white" : "bg-white text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              {t === "bar" ? "Barras" : "Ranking"}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <PanelBox title={activeIndicator.label} Icon={CatIcon}>
-          <div className="h-56 sm:h-72 md:h-80 p-2">
-            {chartType === "bar" ? (
-              <BarChart data={bairros} indicatorKey={activeIndicator.key} indicator={activeIndicator} />
-            ) : (
-              <HorizontalBar data={bairros} indicatorKey={activeIndicator.key} indicator={activeIndicator} />
-            )}
-          </div>
-        </PanelBox>
-
-        <PanelBox title="Ranking completo — todos os bairros" Icon={ClipboardList}>
-          <div className="overflow-y-auto max-h-56 sm:max-h-72 md:max-h-80">
-            <RankingTable indicator={activeIndicator} />
-          </div>
-        </PanelBox>
-      </div>
-    </div>
-  )
-}
-
-function NavItem({
-  label,
-  Icon,
-  active,
-  onClick,
-}: {
-  label: string
-  Icon: LucideIcon
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-sm rounded transition-colors ${
-        active
-          ? "bg-blue-600 text-white font-medium"
-          : "text-slate-300 hover:bg-slate-700 hover:text-white"
-      }`}
-    >
-      <Icon size={14} className="shrink-0" />
-      <span className="leading-tight truncate">{label}</span>
-    </button>
-  )
+const CATEGORY_COUNTS: Record<IndicatorCategory, number> = {
+  demografia: getIndicatorsByCategory("demografia").length,
+  economia: getIndicatorsByCategory("economia").length,
+  habitacao: getIndicatorsByCategory("habitacao").length,
+  social: getIndicatorsByCategory("social").length,
+  saude: getIndicatorsByCategory("saude").length,
+  educacao: getIndicatorsByCategory("educacao").length,
+  infraestrutura: getIndicatorsByCategory("infraestrutura").length,
 }
 
 function BottomNavItem({
@@ -486,7 +53,7 @@ function BottomNavItem({
   badge,
 }: {
   label: string
-  Icon: LucideIcon
+  Icon: typeof LayoutGrid
   active: boolean
   color: string
   onClick: () => void
@@ -496,14 +63,14 @@ function BottomNavItem({
     <button
       onClick={onClick}
       className="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors"
-      style={{ color: active ? color : "#64748b" }}
+      style={{ color: active ? color : "#94a3b8" }}
     >
       <span className={`relative inline-flex${active ? " animate-breathe" : ""}`}>
         <Icon size={20} />
         {badge && (
           <span
             className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full animate-pulse"
-            style={{ background: "#ef4444" }}
+            style={{ background: "#ffd60a" }}
           />
         )}
       </span>
@@ -515,7 +82,13 @@ function BottomNavItem({
 export default function Dashboard() {
   const [active, setActive] = useState<ActiveSection>("overview")
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [categoryUnexplored, setCategoryUnexplored] = useState(() => !localStorage.getItem("cats_explored"))
+  const [categoryUnexplored, setCategoryUnexplored] = useState(
+    () => typeof localStorage === "undefined" || !localStorage.getItem("cg_cats_explored"),
+  )
+
+  // Lifted state: clicking the map or scatter fills the comparison panel.
+  const [selectedBairro, setSelectedBairro] = useState<string>("CARANDÁ")
+  const [pairState, setPairState] = useState<[string, string]>(() => defaultPairState())
 
   const categories = Object.keys(CATEGORY_ICONS) as IndicatorCategory[]
   const isCategoryActive = categories.includes(active as IndicatorCategory)
@@ -527,7 +100,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     document.body.style.overflow = sheetOpen ? "hidden" : ""
-    return () => { document.body.style.overflow = "" }
+    return () => {
+      document.body.style.overflow = ""
+    }
   }, [sheetOpen])
 
   const navigate = (section: ActiveSection) => {
@@ -536,66 +111,100 @@ export default function Dashboard() {
   }
 
   const openCategories = () => {
+    // I want the sheet to take over the bottom of the screen; "Selecting"
+    // an item inside the sheet hides it.
     setSheetOpen(true)
     if (categoryUnexplored) {
-      localStorage.setItem("cats_explored", "1")
+      // eslint-disable-next-line no-empty
+      try { localStorage.setItem("cg_cats_explored", "1") } catch {}
       setCategoryUnexplored(false)
     }
   }
 
+  const onSelectBairro = (name: string) => {
+    setSelectedBairro(name)
+    setActive("compare")
+  }
+
+  const onSelectA = (n: string) => setPairState((p) => [n, p[1]])
+  const onSelectB = (n: string) => setPairState((p) => [p[0], n])
+
+  const headerCountPill = "74 bairros · 7 regiões urbanas"
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#f0f2f5" }}>
-      {/* Header */}
-      <header
-        className="flex items-center justify-between px-3 md:px-4 py-2 shrink-0 border-b"
-        style={{ background: "#1a2d3d", borderColor: "#0f1e2a" }}
-      >
-        <div className="flex items-center gap-2 md:gap-3">
+    <div className="min-h-screen flex flex-col text-foreground">
+      {/* Header — slim, branded, glass */}
+      <header className="sticky top-0 z-30 flex items-center justify-between px-3 md:px-5 py-3 shrink-0 border-b border-[rgba(255,214,10,0.10)] glass">
+        <div className="flex items-center gap-3">
           <div
-            className="w-6 h-6 md:w-7 md:h-7 rounded flex items-center justify-center text-[10px] md:text-[11px] font-bold text-white shrink-0"
-            style={{ background: "#2563eb" }}
+            className="w-9 h-9 rounded-xl grid place-items-center font-bold text-ink shadow-[0_4px_18px_-4px_rgba(255,214,10,0.65)]"
+            style={{ background: "linear-gradient(135deg, #ffd60a 0%, #ffc300 100%)" }}
           >
             CG
           </div>
           <div className="leading-tight">
-            <span className="text-xs md:text-sm font-semibold text-white">Campo Grande — Painel de Bairros</span>
+            <div
+              className="text-base sm:text-lg font-bold text-gold"
+              style={{ fontFamily: "Outfit" }}
+            >
+              Campo Grande<span className="text-slate-300 font-normal"> · Painel de Bairros</span>
             </div>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500">
+              {headerCountPill}
+            </p>
+          </div>
         </div>
-        <span
-          className="text-[10px] md:text-xs px-2 py-0.5 rounded tabular-nums"
-          style={{ background: "#0f2030", color: "#94a3b8" }}
-        >
-          74 bairros
+
+        <span className="hidden sm:inline-flex items-center gap-2 text-[11px] px-2.5 py-1 rounded-full border border-[rgba(255,214,10,0.22)] text-slate-300">
+          <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
+          v2 · Censo 2022
         </span>
       </header>
 
       {/* Body */}
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop sidebar */}
-        <aside
-          className="hidden md:flex w-52 shrink-0 flex-col overflow-y-auto"
-          style={{ background: "#1a2d3d" }}
-        >
-          <SidebarContent active={active} onNavigate={setActive} />
+        <aside className="hidden md:flex w-60 shrink-0 flex-col overflow-y-auto px-1 py-3 glass">
+          <SidebarContent active={active} onNavigate={setActive} categoryIcons={CATEGORY_ICONS} />
         </aside>
 
-        {/* Main content — extra bottom padding on mobile so content isn't hidden by bottom nav */}
-        <main className="flex-1 overflow-y-auto p-3 md:p-5 pb-20 md:pb-5">
-          {active === "overview" && <OverviewPanel />}
-          {active === "compare" && <ComparisonPanel />}
-          {active === "multi" && <MultiComparePanel />}
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto p-3 md:p-6 pb-24 md:pb-8">
+          {active === "overview" && (
+            <OverviewPanel
+              selectedBairro={selectedBairro}
+              onSelectBairro={onSelectBairro}
+            />
+          )}
+          {active === "compare" && (
+            <ComparisonPanel
+              selectedBairro={selectedBairro}
+              onSelectBairro={setSelectedBairro}
+              categoryIcons={CATEGORY_ICONS}
+            />
+          )}
+          {active === "multi" && (
+            <MultiComparePanel
+              selectedA={pairState[0]}
+              selectedB={pairState[1]}
+              onSelectA={onSelectA}
+              onSelectB={onSelectB}
+            />
+          )}
           {categories.map((cat) =>
-            active === cat ? <CategoryPanel key={cat} category={cat} /> : null
+            active === cat ? (
+              <CategoryPanel
+                key={cat}
+                category={cat}
+                categoryIcons={CATEGORY_ICONS}
+              />
+            ) : null,
           )}
         </main>
       </div>
 
       {/* Mobile bottom nav */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 md:hidden z-30 flex border-t"
-        style={{ background: "#1a2d3d", borderColor: "#0f1e2a", position: "fixed" }}
-      >
-        {/* Sliding color indicator bar */}
+      <nav className="fixed bottom-0 left-0 right-0 md:hidden z-30 flex border-t border-[rgba(255,214,10,0.10)] glass">
         <div
           aria-hidden
           className="absolute top-0 left-0 h-[3px] rounded-b"
@@ -603,53 +212,24 @@ export default function Dashboard() {
             width: "25%",
             background: TAB_COLORS[activeTabIndex],
             transform: `translateX(${activeTabIndex * 100}%)`,
-            transition: "transform 220ms cubic-bezier(.4,0,.2,1), background 220ms ease",
+            transition: "transform 240ms cubic-bezier(.4,0,.2,1), background 240ms ease",
           }}
         />
-        <BottomNavItem label="Visão Geral" Icon={LayoutDashboard} active={active === "overview"} color={TAB_COLORS[0]} onClick={() => navigate("overview")} />
-        <BottomNavItem label="Perfil" Icon={SearchCode} active={active === "compare"} color={TAB_COLORS[1]} onClick={() => navigate("compare")} />
-        <BottomNavItem label="Comparar" Icon={Scale} active={active === "multi"} color={TAB_COLORS[2]} onClick={() => navigate("multi")} />
+        <BottomNavItem label="Visão Geral" Icon={LayoutGrid} active={active === "overview"} color={TAB_COLORS[0]} onClick={() => navigate("overview")} />
+        <BottomNavItem label="Perfil" Icon={LayoutGrid} active={active === "compare"} color={TAB_COLORS[1]} onClick={() => navigate("compare")} />
+        <BottomNavItem label="Comparar" Icon={LayoutGrid} active={active === "multi"} color={TAB_COLORS[2]} onClick={() => navigate("multi")} />
         <BottomNavItem label="Categorias" Icon={MoreHorizontal} active={isCategoryActive} color={TAB_COLORS[3]} onClick={openCategories} badge={categoryUnexplored} />
       </nav>
 
-      {/* Mobile bottom sheet for categories */}
-      {sheetOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
-            onClick={() => setSheetOpen(false)}
-          />
-          <div
-            className="fixed bottom-0 left-0 right-0 z-50 md:hidden rounded-t-2xl overflow-hidden"
-            style={{ background: "#1a2d3d" }}
-          >
-            <div
-              className="flex items-center justify-between px-4 py-3 border-b"
-              style={{ borderColor: "#2d4a5f" }}
-            >
-              <p className="text-sm font-semibold text-white">Por Categoria</p>
-              <button
-                onClick={() => setSheetOpen(false)}
-                className="text-slate-400 hover:text-white transition-colors"
-                aria-label="Fechar"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <nav className="p-2 pb-6 space-y-0.5">
-              {categories.map((cat) => (
-                <NavItem
-                  key={cat}
-                  label={categoryLabels[cat]}
-                  Icon={CATEGORY_ICONS[cat]}
-                  active={active === cat}
-                  onClick={() => navigate(cat)}
-                />
-              ))}
-            </nav>
-          </div>
-        </>
-      )}
+      {/* Mobile categories sheet */}
+      <MobileCategorySheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        active={active}
+        onNavigate={navigate}
+        categoryIcons={CATEGORY_ICONS}
+        categoryCounts={CATEGORY_COUNTS}
+      />
     </div>
   )
 }

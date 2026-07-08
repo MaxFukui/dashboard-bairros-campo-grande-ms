@@ -1,6 +1,11 @@
 import ReactECharts from "echarts-for-react/esm/core"
 import * as echarts from "echarts/core"
-import { BarChart as EBarChart, ScatterChart as EScatterChart, RadarChart as ERadarChart, PieChart as EPieChart } from "echarts/charts"
+import {
+  BarChart as EBarChart,
+  ScatterChart as EScatterChart,
+  RadarChart as ERadarChart,
+  PieChart as EPieChart,
+} from "echarts/charts"
 import {
   TitleComponent,
   TooltipComponent,
@@ -8,15 +13,27 @@ import {
   GridComponent,
 } from "echarts/components"
 import { CanvasRenderer } from "echarts/renderers"
-echarts.use([EBarChart, EScatterChart, ERadarChart, EPieChart, TitleComponent, TooltipComponent, LegendComponent, GridComponent, CanvasRenderer])
 
 import { type BairroData, getVal, formatValue, type IndicatorDef } from "@/lib/data"
+import { defaultSortOrder, sortByIndicator } from "@/lib/ranking"
+import {
+  CHART_PALETTE,
+  shortRegiao,
+  regiaoColor,
+  type RegiaoDatum,
+} from "@/lib/charts-helpers"
 
-const COLORS = [
-  "#1d4ed8", "#059669", "#d97706", "#dc2626", "#7c3aed",
-  "#0891b2", "#be185d", "#4338ca", "#15803d", "#b45309",
-  "#9333ea", "#0369a1", "#c2410c", "#6d28d9", "#047857",
-]
+echarts.use([
+  EBarChart,
+  EScatterChart,
+  ERadarChart,
+  EPieChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+  CanvasRenderer,
+])
 
 interface BarChartProps {
   data: BairroData[]
@@ -26,19 +43,28 @@ interface BarChartProps {
   ascending?: boolean
 }
 
-export function BarChart({ data, indicatorKey, indicator, limit = 15, ascending = false }: BarChartProps) {
-  const sorted = [...data].sort((a, b) => {
-    const va = getVal(a, indicatorKey)
-    const vb = getVal(b, indicatorKey)
-    return ascending ? va - vb : vb - va
-  }).slice(0, limit)
+export function BarChart({ data, indicatorKey, indicator, limit = 15, ascending }: BarChartProps) {
+  const order = ascending ?? (defaultSortOrder(indicator) === "asc")
+  const sorted = [...data]
+    .sort((a, b) => {
+      const va = getVal(a, indicatorKey)
+      const vb = getVal(b, indicatorKey)
+      return order ? va - vb : vb - va
+    })
+    .slice(0, limit)
 
   const names = sorted.map((b) => b.nome)
   const values = sorted.map((b) => getVal(b, indicatorKey))
 
   const option = {
+    animationDuration: 900,
+    animationEasing: "cubicOut" as const,
     tooltip: {
       trigger: "axis" as const,
+      backgroundColor: "rgba(0, 8, 20, 0.92)",
+      borderColor: "rgba(255, 214, 10, 0.4)",
+      borderWidth: 1,
+      textStyle: { color: "#f8fafc", fontSize: 12 },
       formatter: (params: { name: string; value: number }[]) => {
         const p = params[0]
         return `<strong>${p.name}</strong><br/>${indicator.label}: ${formatValue(p.value, indicator.format)}`
@@ -48,11 +74,18 @@ export function BarChart({ data, indicatorKey, indicator, limit = 15, ascending 
     xAxis: {
       type: "category" as const,
       data: names,
-      axisLabel: { rotate: 40, fontSize: 10, interval: 0 },
+      axisLabel: {
+        rotate: 40,
+        fontSize: 10,
+        interval: 0,
+        color: "#cfd8e3",
+      },
+      axisLine: { lineStyle: { color: "rgba(255,255,255,0.18)" } },
     },
     yAxis: {
       type: "value" as const,
       axisLabel: {
+        color: "#9aa7b6",
         formatter: (val: number) => {
           if (indicator.format === "percent") return `${val}%`
           if (indicator.format === "currency" && val >= 1000) return `${(val / 1000).toFixed(0)}k`
@@ -60,16 +93,27 @@ export function BarChart({ data, indicatorKey, indicator, limit = 15, ascending 
         },
         fontSize: 10,
       },
+      splitLine: { lineStyle: { color: "rgba(255,255,255,0.08)" } },
     },
-    series: [{
-      type: "bar" as const,
-      data: values,
-      itemStyle: {
-        color: (params: { dataIndex: number }) => COLORS[params.dataIndex % COLORS.length],
-        borderRadius: [4, 4, 0, 0],
+    series: [
+      {
+        type: "bar" as const,
+        data: values.map((v, i) => ({
+          value: v,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: "#ffd60a" },
+              { offset: 0.55, color: "#ffc300" },
+              { offset: 1, color: "#7a4c00" },
+            ]),
+            borderRadius: [8, 8, 2, 2],
+            shadowColor: "rgba(255, 211, 0, 0.35)",
+            shadowBlur: i === 0 ? 14 : 0,
+          },
+        })),
+        barMaxWidth: 44,
       },
-      barMaxWidth: 40,
-    }],
+    ],
   }
 
   return <ReactECharts echarts={echarts} option={option} style={{ height: "100%", width: "100%" }} />
@@ -83,50 +127,59 @@ interface HorizontalBarProps {
 }
 
 export function HorizontalBar({ data, indicatorKey, indicator, limit = 20 }: HorizontalBarProps) {
-  const sorted = [...data]
-    .sort((a, b) => getVal(a, indicatorKey) - getVal(b, indicatorKey))
-    .slice(0, limit)
-
-  const names = sorted.map((b) => b.nome)
-  const values = sorted.map((b) => getVal(b, indicatorKey))
+  const sorted = sortByIndicator(data, indicator, limit)
+  const reversed = [...sorted].reverse()
+  const names = reversed.map((b) => b.nome)
+  const values = reversed.map((b) => getVal(b, indicatorKey))
   const maxVal = Math.max(...values, 1)
 
   const option = {
+    animationDuration: 900,
+    animationEasing: "cubicOut" as const,
     tooltip: {
       trigger: "axis" as const,
+      backgroundColor: "rgba(0, 8, 20, 0.92)",
+      borderColor: "rgba(255, 214, 10, 0.4)",
+      borderWidth: 1,
+      textStyle: { color: "#f8fafc", fontSize: 12 },
       formatter: (params: { name: string; value: number }[]) => {
         const p = params[0]
         return `<strong>${p.name}</strong><br/>${indicator.label}: ${formatValue(p.value, indicator.format)}`
       },
     },
-    grid: { left: 120, right: 24, bottom: 8, top: 8, containLabel: false },
+    grid: { left: 120, right: 56, bottom: 8, top: 8, containLabel: false },
     xAxis: { type: "value" as const, show: false },
     yAxis: {
       type: "category" as const,
       data: names,
-      axisLabel: { fontSize: 11 },
+      axisLabel: { fontSize: 11, color: "#cfd8e3" },
+      axisLine: { lineStyle: { color: "rgba(255,255,255,0.12)" } },
+      axisTick: { show: false },
     },
-    series: [{
-      type: "bar" as const,
-      data: values,
-      itemStyle: {
-        color: (params: { dataIndex: number }) => {
-          const ratio = values[params.dataIndex] / maxVal
-          if (ratio > 0.75) return "#dc2626"
-          if (ratio > 0.5) return "#d97706"
-          if (ratio > 0.25) return "#059669"
-          return "#1d4ed8"
+    series: [
+      {
+        type: "bar" as const,
+        data: values.map((v) => {
+          const ratio = v / maxVal
+          let color = "#003566"
+          if (ratio > 0.75) color = "#ffd60a"
+          else if (ratio > 0.5) color = "#ffc300"
+          else if (ratio > 0.25) color = "#1d4ed8"
+          return {
+            value: v,
+            itemStyle: { color, borderRadius: [0, 8, 8, 0] },
+          }
+        }),
+        barMaxWidth: 22,
+        label: {
+          show: true,
+          position: "right" as const,
+          formatter: (params: { value: number }) => formatValue(params.value, indicator.format),
+          fontSize: 10,
+          color: "#e2e8f0",
         },
-        borderRadius: [0, 4, 4, 0],
       },
-      barMaxWidth: 20,
-      label: {
-        show: true,
-        position: "right" as const,
-        formatter: (params: { value: number }) => formatValue(params.value, indicator.format),
-        fontSize: 10,
-      },
-    }],
+    ],
   }
 
   return <ReactECharts echarts={echarts} option={option} style={{ height: "100%", width: "100%" }} />
@@ -139,35 +192,85 @@ interface ScatterChartProps {
   xLabel: string
   yLabel: string
   sizeKey?: string
+  onPointClick?: (bairroName: string) => void
 }
 
-export function ScatterChart({ data, xKey, yKey, xLabel, yLabel, sizeKey }: ScatterChartProps) {
+export function ScatterChart({ data, xKey, yKey, xLabel, yLabel, sizeKey, onPointClick }: ScatterChartProps) {
   const maxSize = sizeKey ? Math.max(...data.map((b) => getVal(b, sizeKey)), 1) : 1
 
   const chartData = data.map((b) => ({
-    value: [getVal(b, xKey), getVal(b, yKey), sizeKey ? (getVal(b, sizeKey) / maxSize) * 40 + 5 : 15],
+    value: [
+      getVal(b, xKey),
+      getVal(b, yKey),
+      sizeKey ? (getVal(b, sizeKey) / maxSize) * 38 + 6 : 14,
+    ],
     name: b.nome,
   }))
 
   const option = {
+    animationDuration: 1200,
     tooltip: {
+      backgroundColor: "rgba(0, 8, 20, 0.92)",
+      borderColor: "rgba(255, 214, 10, 0.4)",
+      borderWidth: 1,
+      textStyle: { color: "#f8fafc", fontSize: 12 },
       formatter: (params: { data: { name: string; value: number[] } }) => {
         const p = params.data
         return `<strong>${p.name}</strong><br/>${xLabel}: ${p.value[0].toLocaleString("pt-BR")}<br/>${yLabel}: ${p.value[1].toLocaleString("pt-BR")}`
       },
     },
     grid: { left: 8, right: 24, bottom: 8, top: 24, containLabel: true },
-    xAxis: { type: "value" as const, name: xLabel, nameTextStyle: { fontSize: 11 } },
-    yAxis: { type: "value" as const, name: yLabel, nameTextStyle: { fontSize: 11 } },
-    series: [{
-      type: "scatter" as const,
-      data: chartData,
-      symbolSize: (val: number[]) => val[2] || 15,
-      itemStyle: { color: "#1d4ed8", opacity: 0.7 },
-    }],
+    xAxis: {
+      type: "value" as const,
+      name: xLabel,
+      nameTextStyle: { fontSize: 11, color: "#9aa7b6" },
+      axisLabel: { color: "#9aa7b6", fontSize: 10 },
+      splitLine: { lineStyle: { color: "rgba(255,255,255,0.08)" } },
+      axisLine: { lineStyle: { color: "rgba(255,255,255,0.18)" } },
+    },
+    yAxis: {
+      type: "value" as const,
+      name: yLabel,
+      nameTextStyle: { fontSize: 11, color: "#9aa7b6" },
+      axisLabel: { color: "#9aa7b6", fontSize: 10 },
+      splitLine: { lineStyle: { color: "rgba(255,255,255,0.08)" } },
+      axisLine: { lineStyle: { color: "rgba(255,255,255,0.18)" } },
+    },
+    series: [
+      {
+        type: "scatter" as const,
+        data: chartData,
+        symbolSize: (val: number[]) => val[2] || 14,
+        itemStyle: {
+          color: new echarts.graphic.RadialGradient(0.5, 0.5, 1, [
+            { offset: 0, color: "rgba(255, 214, 10, 0.92)" },
+            { offset: 0.7, color: "rgba(255, 195, 0, 0.55)" },
+            { offset: 1, color: "rgba(0, 53, 102, 0.10)" },
+          ]),
+          shadowColor: "rgba(255, 214, 10, 0.45)",
+          shadowBlur: 6,
+        },
+        emphasis: {
+          itemStyle: { shadowBlur: 18, shadowColor: "rgba(255, 214, 10, 0.7)" },
+          scale: 1.18,
+        },
+      },
+    ],
   }
 
-  return <ReactECharts echarts={echarts} option={option} style={{ height: "100%", width: "100%" }} />
+  return (
+    <ReactECharts
+      echarts={echarts}
+      option={option}
+      style={{ height: "100%", width: "100%" }}
+      onEvents={{
+        click: (params: { data?: { name?: string } }) => {
+          const name = params.data?.name
+          if (name && onPointClick) onPointClick(name)
+        },
+      }}
+    />
+  )
 }
 
 interface RadarChartProps {
@@ -191,67 +294,99 @@ export function RadarChart({ data, indicators, selected }: RadarChartProps) {
     legend: {
       data: selectedBairros.map((b) => b.nome),
       bottom: 0,
-      textStyle: { fontSize: 11 },
+      textStyle: { fontSize: 11, color: "#cfd8e3" },
     },
     radar: {
       indicator: indicators.map((ind) => ({ name: ind.label, max: 100 })),
       shape: "polygon" as const,
       radius: "65%",
-      axisName: { fontSize: 10 },
+      axisName: { fontSize: 10, color: "#9aa7b6" },
+      axisLine: { lineStyle: { color: "rgba(255,255,255,0.18)" } },
+      splitArea: { areaStyle: { color: ["rgba(0,53,102,0.18)", "rgba(0,29,61,0.18)"] } },
+      splitLine: { lineStyle: { color: "rgba(255,255,255,0.10)" } },
     },
-    series: [{
-      type: "radar" as const,
-      data: selectedBairros.map((b) => ({
-        value: indicators.map((ind) => {
-          const raw = getVal(b, ind.key)
-          const max = normalize(ind.key, data)
-          return Math.round((raw / max) * 100)
-        }),
-        name: b.nome,
-      })),
-    }],
-    color: COLORS,
+    series: [
+      {
+        type: "radar" as const,
+        data: selectedBairros.map((b) => ({
+          value: indicators.map((ind) => {
+            const raw = getVal(b, ind.key)
+            const max = normalize(ind.key, data)
+            return Math.round((raw / max) * 100)
+          }),
+          name: b.nome,
+          areaStyle: { opacity: 0.2 },
+        })),
+      },
+    ],
+    color: CHART_PALETTE,
   }
 
   return <ReactECharts echarts={echarts} option={option} style={{ height: "100%", width: "100%" }} />
 }
 
-interface PieChartProps {
-  data: BairroData[]
-  indicatorKey: string
-  limit?: number
-  title?: string
+interface RegiaoDonutChartProps {
+  data: RegiaoDatum[]
+  format: IndicatorDef["format"]
+  unit?: string
 }
 
-export function PieChart({ data, indicatorKey, limit = 8, title }: PieChartProps) {
-  const sorted = [...data].sort((a, b) => getVal(b, indicatorKey) - getVal(a, indicatorKey))
-  const top = sorted.slice(0, limit)
-  const rest = sorted.slice(limit)
-  const restSum = rest.reduce((acc, b) => acc + getVal(b, indicatorKey), 0)
-
-  const pieData = [
-    ...top.map((b) => ({ name: b.nome, value: getVal(b, indicatorKey) })),
-    ...(restSum > 0 ? [{ name: "Outros", value: restSum }] : []),
-  ]
+export function RegiaoDonutChart({ data: raw, format, unit }: RegiaoDonutChartProps) {
+  const data = raw
+    .filter((d) => d.value !== 0)
+    .map((d) => ({
+      name: shortRegiao(d.name),
+      value: d.value,
+      itemStyle: {
+        color: regiaoColor(d.name),
+        borderColor: "#000814",
+        borderWidth: 2,
+        borderRadius: 6,
+      },
+    }))
 
   const option = {
-    title: title ? { text: title, left: "center" as const, textStyle: { fontSize: 14 } } : undefined,
+    animationDuration: 1100,
+    animationEasing: "cubicOut" as const,
     tooltip: {
       trigger: "item" as const,
-      formatter: (params: { name: string; value: number; percent: number }) => {
-        return `${params.name}: ${params.value.toLocaleString("pt-BR")} (${params.percent.toFixed(1)}%)`
+      backgroundColor: "rgba(0, 8, 20, 0.92)",
+      borderColor: "rgba(255, 214, 10, 0.4)",
+      borderWidth: 1,
+      textStyle: { color: "#f8fafc", fontSize: 12 },
+      formatter: (params: { name: string; value: number; percent: number; data?: { bairrosCount?: number } }) => {
+        const count = params.data?.bairrosCount
+        return `${params.name}<br/>${formatValue(params.value, format)}${unit ? ` ${unit}` : ""} (${params.percent.toFixed(1)}%)${count ? `<br/><span style="opacity:0.7">${count} bairros</span>` : ""}`
       },
     },
-    legend: { type: "scroll" as const, bottom: 0, textStyle: { fontSize: 10 } },
-    series: [{
-      type: "pie" as const,
-      radius: ["30%", "65%"],
-      center: ["50%", "48%"],
-      data: pieData,
-      label: { fontSize: 10 },
-    }],
-    color: COLORS,
+    legend: {
+      type: "scroll" as const,
+      bottom: 0,
+      textStyle: { fontSize: 11, color: "#cfd8e3" },
+      itemStyle: { borderColor: "#000814", borderWidth: 1 },
+    },
+    series: [
+      {
+        type: "pie" as const,
+        radius: ["44%", "72%"],
+        center: ["50%", "47%"],
+        avoidLabelOverlap: true,
+        data,
+        label: {
+          formatter: "{b}\n{d}%",
+          fontSize: 11,
+          color: "#e2e8f0",
+          lineHeight: 14,
+        },
+        labelLine: { length: 12, length2: 6, lineStyle: { color: "rgba(255,255,255,0.28)" } },
+        emphasis: {
+          itemStyle: { shadowBlur: 18, shadowColor: "rgba(255, 214, 10, 0.4)" },
+          scale: true,
+          scaleSize: 8,
+        },
+      },
+    ],
   }
 
-  return <ReactECharts echarts={echarts} option={option} style={{ height: "100%", width: "100%" }} />
+  return <ReactECharts echarts={echarts} option={option} style={{ height: "100%", width: "100%" }} notMerge />
 }

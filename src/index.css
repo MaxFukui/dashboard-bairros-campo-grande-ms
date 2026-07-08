@@ -1,156 +1,380 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
+/* ----------------------------------------------------------------- *
+ * Campo Grande Painel de Bairros — Theme tokens
+ * Palette: Ink Black · Prussian Blue · Oxford Navy · School Bus Yellow · Gold
+ * Fonts:  Outfit (headers) · Inter (body)
+ * ----------------------------------------------------------------- */
 @theme inline {
-  --color-background: #ffffff;
-  --color-foreground: #0a0a0a;
-  --color-card: #ffffff;
-  --color-card-foreground: #0a0a0a;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #0a0a0a;
-  --color-primary: #1d4ed8;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #f1f5f9;
-  --color-secondary-foreground: #0f172a;
-  --color-muted: #f1f5f9;
-  --color-muted-foreground: #64748b;
-  --color-accent: #f1f5f9;
-  --color-accent-foreground: #0f172a;
+  /* Surfaces */
+  --color-background: #000814;
+  --color-foreground: #f8fafc;
+  --color-card: #001d3d;
+  --color-card-foreground: #f8fafc;
+  --color-popover: #001d3d;
+  --color-popover-foreground: #f8fafc;
+
+  /* Accent / action */
+  --color-primary: #ffd60a;
+  --color-primary-foreground: #000814;
+  --color-secondary: #003566;
+  --color-secondary-foreground: #f8fafc;
+  --color-muted: #0a1f3d;
+  --color-muted-foreground: #94a3b8;
+  --color-accent: #003566;
+  --color-accent-foreground: #ffd60a;
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
-  --color-border: #e2e8f0;
-  --color-input: #e2e8f0;
-  --color-ring: #1d4ed8;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
 
-  --font-sans: 'Geist Variable', sans-serif;
+  /* Lines & focus */
+  --color-border: rgba(255, 214, 10, 0.16);
+  --color-input: rgba(255, 214, 10, 0.24);
+  --color-ring: #ffd60a;
 
-  --font-heading: var(--font-sans);
+  /* Palette tokens (used by components directly) */
+  --color-ink: #000814;
+  --color-prussian: #001d3d;
+  --color-oxford: #003566;
+  --color-yellow: #ffc300;
+  --color-gold: #ffd60a;
 
-  --color-sidebar-ring: var(--sidebar-ring);
+  /* Radii — generous, bento style */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
 
-  --color-sidebar-border: var(--sidebar-border);
+  /* Fonts */
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-heading: "Outfit", "Inter", system-ui, sans-serif;
 
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  /* Charts keep the school-bus-to-gold + navy accents */
+  --color-chart-1: #ffd60a;
+  --color-chart-2: #ffc300;
+  --color-chart-3: #003566;
+  --color-chart-4: #1d4ed8;
+  --color-chart-5: #6d28d9;
 
-  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar: var(--color-prussian);
+  --color-sidebar-foreground: #f8fafc;
+  --color-sidebar-primary: var(--color-gold);
+  --color-sidebar-primary-foreground: #000814;
+  --color-sidebar-accent: var(--color-oxford);
+  --color-sidebar-accent-foreground: #ffd60a;
+  --color-sidebar-border: rgba(255, 214, 10, 0.14);
+  --color-sidebar-ring: var(--color-gold);
 
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-
-  --color-sidebar-primary: var(--sidebar-primary);
-
-  --color-sidebar-foreground: var(--sidebar-foreground);
-
-  --color-sidebar: var(--sidebar);
-
-  --color-chart-5: var(--chart-5);
-
-  --color-chart-4: var(--chart-4);
-
-  --color-chart-3: var(--chart-3);
-
-  --color-chart-2: var(--chart-2);
-
-  --color-chart-1: var(--chart-1);
-
-  --radius-2xl: calc(var(--radius) * 1.8);
-
-  --radius-3xl: calc(var(--radius) * 2.2);
-
-  --radius-4xl: calc(var(--radius) * 2.6);
-
+  /* Motion */
   --animate-breathe: breathe 2.4s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-grid-rise: grid-rise 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  --animate-pop: pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+/* ----------------------------------------------------------------- *
+ * Keyframes
+ * ----------------------------------------------------------------- */
 @keyframes breathe {
-  0%, 100% { opacity: 1;   }
-  50%       { opacity: 0.3; }
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
 }
 
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes grid-rise {
+  0%   { opacity: 0; transform: translateY(14px) scale(0.985); }
+  100% { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+@keyframes pop {
+  0%   { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 214, 10, 0); }
+  50%      { box-shadow: 0 0 0 8px rgba(255, 214, 10, 0.06); }
+}
+
+/* ----------------------------------------------------------------- *
+ * Reveal on scroll utility (used with IntersectionObserver hook)
+ * ----------------------------------------------------------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
+}
+
+/* ----------------------------------------------------------------- *
+ * Liquid-glass utility
+ * ----------------------------------------------------------------- */
+.glass {
+  background: linear-gradient(
+    155deg,
+    rgba(0, 53, 102, 0.34) 0%,
+    rgba(0, 29, 61, 0.42) 60%,
+    rgba(0, 8, 20, 0.55) 100%
+  );
+  backdrop-filter: blur(18px) saturate(125%);
+  -webkit-backdrop-filter: blur(18px) saturate(125%);
+  border: 1px solid rgba(255, 214, 10, 0.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 28px -16px rgba(0, 0, 0, 0.7);
+}
+
+.glass-light {
+  background: linear-gradient(
+    155deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 214, 10, 0.02) 100%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 214, 10, 0.08);
+}
+
+/* Subtle moving top sellar on big cards */
+.glass-sheen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(255, 214, 10, 0.10) 0%, transparent 22%);
+  opacity: 0.6;
+}
+
+/* Gradient text helper */
+.text-grain-gold {
+  background: linear-gradient(180deg, #ffd60a 0%, #ffc300 60%, #b07a00 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ----------------------------------------------------------------- *
+ * Base
+ * ----------------------------------------------------------------- */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+    font-feature-settings: "ss01", "cv01", "cv02";
+  }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    background:
+      radial-gradient(1200px 800px at 80% -10%, rgba(255, 214, 10, 0.07), transparent 60%),
+      radial-gradient(900px 700px at -10% 10%, rgba(0, 53, 102, 0.45), transparent 60%),
+      #000814;
+    background-attachment: fixed;
+    color: #f8fafc;
+    min-height: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  html {
-    @apply font-sans;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
   }
 }
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+/* Scrollbars — themed */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 214, 10, 0.35) transparent;
+}
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(255, 214, 10, 0.45), rgba(255, 211, 0, 0.25));
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* ----------------------------------------------------------------- *
+ * BairroMap — Leaflet choropleth over a darkened satellite basemap.
+ *
+ *  - Satellite tiles (ESRI World Imagery) get a grayscale + brightness
+ *    filter so the bairro shapes (drawn on top) stand out.
+ *  - Labels are bold with a dark text-shadow + subtle white outline so
+ *    they remain legible against any satellite texture.
+ *  - Hover tooltip is a solid dark glass card with gold accent.
+ * ----------------------------------------------------------------- */
+.cg-bairro-map {
+  background: #000814;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+.cg-bairro-map .leaflet-tile-pane {
+  filter: grayscale(1) brightness(0.42) contrast(1.08);
+}
+
+.cg-bairro-map .leaflet-container {
+  background: #000814;
+  font-family: var(--font-sans);
+}
+
+.cg-bairro-map .leaflet-control-attribution {
+  background: rgba(0, 8, 20, 0.78);
+  color: #94a3b8;
+  font-size: 10px;
+  border-radius: 6px 0 0 0;
+  padding: 2px 6px;
+}
+.cg-bairro-map .leaflet-control-attribution a {
+  color: #ffd60a;
+}
+
+.cg-bairro-map .leaflet-control-zoom a {
+  background: rgba(0, 29, 61, 0.92);
+  color: #ffd60a;
+  border-color: rgba(255, 214, 10, 0.25);
+}
+.cg-bairro-map .leaflet-control-zoom a:hover {
+  background: rgba(0, 53, 102, 0.95);
+}
+
+.cg-tip-wrap.leaflet-tooltip {
+  background: rgba(0, 8, 20, 0.94);
+  border: 1px solid rgba(255, 214, 10, 0.45);
+  color: #f8fafc;
+  padding: 8px 10px;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.85);
+}
+.cg-tip-wrap.leaflet-tooltip::before {
+  border-top-color: rgba(255, 214, 10, 0.55);
+}
+.cg-tip__name {
+  font-weight: 700;
+  font-size: 13px;
+  color: #ffd60a;
+  font-family: var(--font-heading);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  margin-bottom: 2px;
+}
+.cg-tip__val {
+  font-weight: 600;
+  font-size: 12px;
+  color: #f8fafc;
+  font-variant-numeric: tabular-nums;
+}
+.cg-tip__sub {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 3px;
+}
+.cg-tip__hint {
+  font-size: 10px;
+  color: #ffd60a;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+.cg-label {
+  pointer-events: none;
+}
+.cg-label span {
+  display: inline-block;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  text-shadow:
+    0 0 3px rgba(0, 8, 20, 0.95),
+    0 1px 4px rgba(0, 8, 20, 0.95),
+    -1px 0 2px rgba(0, 8, 20, 0.9),
+    1px 0 2px rgba(0, 8, 20, 0.9),
+    0 -1px 2px rgba(0, 8, 20, 0.9),
+    0 1px 2px rgba(0, 8, 20, 0.9);
+  paint-order: stroke fill;
+  -webkit-text-stroke: 1px rgba(0, 8, 20, 0.85);
+}
+.cg-label--selected span {
+  font-size: 15px;
+  color: #ffd60a;
+  -webkit-text-stroke: 1.5px rgba(0, 8, 20, 0.95);
+  text-shadow:
+    0 0 6px rgba(0, 8, 20, 1),
+    0 2px 6px rgba(0, 8, 20, 0.95),
+    -1px 0 3px rgba(0, 8, 20, 0.95),
+    1px 0 3px rgba(0, 8, 20, 0.95);
+}
+.cg-label--small span {
+  font-size: 11px;
+  color: #f1f5f9;
+  -webkit-text-stroke: 0.8px rgba(0, 8, 20, 0.85);
+}
+
+.cg-legend {
+  position: absolute;
+  left: 12px;
+  bottom: 14px;
+  z-index: 5;
+  padding: 8px 10px 6px;
+  border-radius: 10px;
+  background: rgba(0, 8, 20, 0.78);
+  border: 1px solid rgba(255, 214, 10, 0.22);
+  pointer-events: none;
+  font-family: var(--font-sans);
+  min-width: 180px;
+}
+.cg-legend__bar {
+  height: 10px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    #001d3d 0%,
+    #003566 25%,
+    #1d4ed8 50%,
+    #ffc300 75%,
+    #ffd60a 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(255, 214, 10, 0.18);
+}
+.cg-legend__labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 10px;
+  color: #cfd8e3;
+  font-variant-numeric: tabular-nums;
+}
+
+.cg-bairro-map .leaflet-container:focus,
+.cg-bairro-map .leaflet-container:focus-visible {
+  outline: none;
 }
