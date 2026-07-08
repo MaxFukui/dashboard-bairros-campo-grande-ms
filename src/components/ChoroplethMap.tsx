@@ -4,20 +4,15 @@ import "leaflet/dist/leaflet.css"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { type IndicatorDef, formatValue, bairros, getVal } from "@/lib/data"
 import { loadBairrosGeoJSON, type BairroFeatureCollection } from "@/lib/geo"
-import { shortRegiao, regiaoColor } from "@/lib/charts-helpers"
+import { shortRegiao } from "@/lib/charts-helpers"
 import { cn } from "@/lib/utils"
 
 const MAP_CONTAINER_CLASS = "cg-bairro-map"
 
-const REGION_PALETTE: Record<string, string> = {
-  "Região Urbana do Anhanduizinho": "#ffd60a",
-  "Região Urbana do Bandeira": "#ffc300",
-  "Região Urbana do Centro": "#003566",
-  "Região Urbana do Imbirussú": "#0891b2",
-  "Região Urbana do Lagoa": "#7c3aed",
-  "Região Urbana do Prosa": "#dc2626",
-  "Região Urbana do Segredo": "#10b981",
-}
+// One border color for every bairro. Per-região borders looked broken:
+// dark ones (navy) disappeared against the basemap, leaving "invisible"
+// limits between some neighborhoods.
+const BORDER_COLOR = "rgba(241, 245, 249, 0.75)"
 
 const COLOR_RAMP = ["#001d3d", "#003566", "#1d4ed8", "#ffc300", "#ffd60a"]
 
@@ -211,7 +206,6 @@ export function ChoroplethMap({
       const value = bairro ? getVal(bairro, indicator.key) : 0
       const t = maxVal > minVal ? (value - minVal) / (maxVal - minVal) : 0.5
       const isSelected = !!selected && !!bairro && bairro.nome === selected
-      const regiao = props ? (byId.get(props.id_bairro ?? -1)?.nm_subdist ?? "") : ""
 
       if (isSelected) {
         return {
@@ -226,7 +220,7 @@ export function ChoroplethMap({
       return {
         fillColor: valueToColor(t),
         fillOpacity: 0.55,
-        color: regiao ? regiaoColor(regiao) : "rgba(255, 214, 10, 0.55)",
+        color: BORDER_COLOR,
         weight: 1.1,
         opacity: 0.9,
       }
@@ -321,22 +315,6 @@ export function ChoroplethMap({
     <Card className={cn("overflow-hidden", className)}>
       <CardHeader className="pb-2">
         <CardTitle>{indicator.label} por bairro</CardTitle>
-        <div className="flex flex-wrap gap-1.5 mt-2">
-          {Object.entries(REGION_PALETTE).map(([name, color]) => (
-            <span
-              key={name}
-              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium"
-              style={{
-                background: "rgba(0, 53, 102, 0.30)",
-                color: "#cfd8e3",
-                border: `1px solid ${color}55`,
-              }}
-            >
-              <span className="w-2 h-2 rounded-sm" style={{ background: color }} />
-              {shortRegiao(name)}
-            </span>
-          ))}
-        </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="cg-map-root" style={{ height, width: "100%" }}>
@@ -363,19 +341,37 @@ export function ChoroplethMap({
   )
 }
 
+// Area-weighted (shoelace) centroid of one ring. A plain vertex average
+// drifts toward vertex-dense edges, which put labels visibly off-center.
+function ringCentroid(ring: number[][]): { area: number; x: number; y: number } | null {
+  if (ring.length < 3) return null
+  let a = 0, cx = 0, cy = 0
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [x1, y1] = ring[j]
+    const [x2, y2] = ring[i]
+    const f = x1 * y2 - x2 * y1
+    a += f
+    cx += (x1 + x2) * f
+    cy += (y1 + y2) * f
+  }
+  if (a === 0) return null
+  return { area: Math.abs(a / 2), x: cx / (3 * a), y: cy / (3 * a) }
+}
+
 function featureCentroid(feat: BairroFeatureCollection["features"][number]): [number, number] | null {
   const g = feat.geometry
   if (!g) return null
-  let coords: number[][] = []
-  if (g.type === "Polygon") {
-    coords = g.coordinates[0]
-  } else if (g.type === "MultiPolygon") {
-    let largest: number[][] = []
-    for (const poly of g.coordinates) {
-      if (poly[0].length > largest.length) largest = poly[0]
-    }
-    coords = largest
+
+  let best: { area: number; x: number; y: number } | null = null
+  const rings = g.type === "Polygon" ? [g.coordinates[0]] : g.coordinates.map((poly) => poly[0])
+  for (const ring of rings) {
+    const c = ringCentroid(ring)
+    if (c && (!best || c.area > best.area)) best = c
   }
+  if (best) return [best.y, best.x]
+
+  // Degenerate geometry — fall back to a vertex average.
+  const coords = rings.flat()
   if (!coords.length) return null
   let sx = 0, sy = 0
   for (const [x, y] of coords) {

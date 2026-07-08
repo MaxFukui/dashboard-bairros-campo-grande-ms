@@ -324,6 +324,12 @@
 
 .cg-label {
   pointer-events: none;
+  /* Leaflet's iconAnchor already centers the icon box on the centroid —
+   * just center the text inside it. (An extra translate(-50%,-50%) here
+   * used to shift every label half a box left/up of its bairro.) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .cg-label span {
   display: inline-block;
@@ -332,7 +338,6 @@
   color: #ffffff;
   letter-spacing: 0.02em;
   white-space: nowrap;
-  transform: translate(-50%, -50%);
   text-shadow:
     0 0 3px rgba(0, 8, 20, 0.95),
     0 1px 4px rgba(0, 8, 20, 0.95),
