@@ -265,6 +265,19 @@
   background: rgba(0, 53, 102, 0.95);
 }
 
+.cg-map-root {
+  position: relative;
+}
+
+.cg-map-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 350;
+  background: #001d3d;
+  opacity: 0.2;
+  pointer-events: none;
+}
+
 .cg-tip-wrap.leaflet-tooltip {
   background: rgba(0, 8, 20, 0.94);
   border: 1px solid rgba(255, 214, 10, 0.45);

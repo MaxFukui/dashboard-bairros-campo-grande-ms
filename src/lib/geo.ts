@@ -2,8 +2,14 @@
 // Data files live in /public/geo/ and are fetched at runtime so the
 // initial JS bundle stays small.
 
-export const CG_GEO_URL = "/geo/bairros_campo_grande.geojson"
-export const CG_TOPO_URL = "/geo/bairros_campo_grande.topojson"
+// Resolve against Vite's BASE_URL so the loader works whether the app
+// is served from "/" or from a subpath like "/dashboard/".
+const BASE = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`
+
+export const CG_GEO_URL = `${BASE}geo/bairros_campo_grande.geojson`
+export const CG_TOPO_URL = `${BASE}geo/bairros_campo_grande.topojson`
 
 export interface GeoJSONPolygon {
   type: "Polygon"

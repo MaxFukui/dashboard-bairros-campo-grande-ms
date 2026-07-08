@@ -345,19 +345,21 @@ export function ChoroplethMap({
           ref={containerRef}
           className={`${MAP_CONTAINER_CLASS} cg-map-root`}
           style={{ height, width: "100%" }}
-        />
+        >
+          <div className="cg-map-tint" aria-hidden />
+          <div className="cg-legend" aria-hidden>
+            <div className="cg-legend__bar" />
+            <div className="cg-legend__labels">
+              <span>{formatValue(legendScale.min, indicator.format)}</span>
+              <span>{formatValue(legendScale.max, indicator.format)}</span>
+            </div>
+          </div>
+        </div>
         <div className="px-3 py-2 text-[10px] text-slate-500">
           <span className="text-gold/80 font-semibold">Como ler:</span>{" "}
           azul-marinho = baixo, dourado = alto · clique num bairro para abrir o perfil.
         </div>
       </CardContent>
-      <div className="cg-legend" aria-hidden>
-        <div className="cg-legend__bar" />
-        <div className="cg-legend__labels">
-          <span>{formatValue(legendScale.min, indicator.format)}</span>
-          <span>{formatValue(legendScale.max, indicator.format)}</span>
-        </div>
-      </div>
     </Card>
   )
 }
