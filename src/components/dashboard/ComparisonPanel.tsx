@@ -14,12 +14,12 @@ import {
   getIndicatorsByCategory,
   bairros,
   getVal,
-  formatValue,
 } from "@/lib/data"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ChoroplethMap } from "@/components/ChoroplethMap"
 import { BentoTile } from "./BentoTile"
 import { KpiCard } from "./KpiCard"
+import { AnimatedNumber } from "./AnimatedNumber"
 import type { CategoryIconMap } from "./types"
 
 interface ComparisonPanelProps {
@@ -143,7 +143,7 @@ export function ComparisonPanel({
                   >
                     <span className="text-slate-400 truncate">{ind.label}</span>
                     <span className="text-gold font-semibold tabular-nums shrink-0">
-                      {formatValue(getVal(bairro, ind.key), ind.format)}
+                      <AnimatedNumber value={getVal(bairro, ind.key)} format={ind.format} />
                     </span>
                   </li>
                 ))}

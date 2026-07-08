@@ -1,5 +1,6 @@
 import { type LucideIcon } from "lucide-react"
-import { type IndicatorDef, formatValue } from "@/lib/data"
+import { type IndicatorDef } from "@/lib/data"
+import { AnimatedNumber } from "./AnimatedNumber"
 import { cn } from "@/lib/utils"
 
 export interface KpiCardProps {
@@ -48,7 +49,7 @@ export function KpiCard({
         className="mt-2 text-xl sm:text-2xl font-bold tabular-nums leading-tight break-words"
         style={{ fontFamily: "Outfit, Inter, sans-serif" }}
       >
-        {formatValue(value, format)}
+        <AnimatedNumber value={value} format={format} />
       </p>
       {note && <p className="mt-1 text-[10px] text-slate-400/85">{note}</p>}
       {/* Hover shimmer line */}
