@@ -28,3 +28,5 @@ DAFO Carandá.xlsx
 *.njsproj
 *.sln
 *.sw?
+
+._.DS_*
